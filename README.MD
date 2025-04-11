@@ -137,3 +137,5 @@ To contribute:
 > Made with ❤ by **Glory Jain**
 
  Backend deployment link: "https://s64-gloryjain-hirex.onrender.com"
+
+ frontend deployment link: "https://hirex12.netlify.app/"
