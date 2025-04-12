@@ -53,4 +53,26 @@ router.post('/', async (req, res) => {
     }
 });
 
+// PUT - Update a user by ID
+router.put('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Check if user exists
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update user fields
+        const updatedUser = await User.findByIdAndUpdate(id, req.body, { new: true });
+
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error("PUT /api/users/:id error:", error);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+
 export default router;
