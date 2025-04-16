@@ -2,6 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import userRoutes from "./routes/user.routes.js";
+import companyRoutes from "./routes/company.routes.js"; // Import company routes
 
 dotenv.config();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/users', userRoutes);
+app.use('/api/companies', companyRoutes); // Register company route
 
 // Test route
 app.get('/', (req, res) => {
