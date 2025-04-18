@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,9 @@ const Signup = () => {
     resume: null,
   });
 
+  // const [message, setMessage] = useState("");  // To hold success message
+  const [error, setError] = useState("");      // To hold error message
+
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
     setFormData({
@@ -19,10 +23,40 @@ const Signup = () => {
     });
   };
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
-    console.log("Signup Data:", formData);
-    // Add signup logic here
+
+    const data = new FormData();
+    data.append("fullname", formData.fullname);
+    data.append("email", formData.email);
+    data.append("phoneNumber", formData.phoneNumber);
+    data.append("password", formData.password);
+    data.append("role", formData.role);
+    if (formData.resume) {
+      data.append("resume", formData.resume);
+    }
+
+    try {
+      const response = await axios.post("http://localhost:5000/api/users", data);
+      
+      // If signup is successful, show success message
+      alert("User registered successfully!");
+      setError("");  // Clear any previous error
+      setFormData({
+        fullname: "",
+        email: "",
+        phoneNumber: "",
+        password: "",
+        role: "student",
+        resume: null,
+      }); // Reset form fields after success
+    } catch (error) {
+      console.error("Signup error:", error.response?.data || error.message);
+      
+      // Show error message if signup fails
+      setError("Signup failed! Please try again.");
+      
+    }
   };
 
   return (
@@ -46,11 +80,6 @@ const Signup = () => {
             width: 100%;
             max-width: 450px;
             text-align: center;
-          }
-
-          .signup-logo {
-            width: 120px;
-            margin: 0 auto 20px;
           }
 
           .signup-box h2 {
@@ -96,12 +125,24 @@ const Signup = () => {
             color: #28a745;
             text-decoration: none;
           }
+
+          .message {
+            margin-top: 20px;
+            font-size: 18px;
+            color: green;
+          }
+
+          .error {
+            margin-top: 20px;
+            font-size: 18px;
+            color: red;
+          }
         `}
       </style>
-      
+
       <div className="signup-box">
         <h2>Sign Up</h2>
-        <form onSubmit={handleSignup}>
+        <form onSubmit={handleSignup} encType="multipart/form-data">
           <input
             type="text"
             name="fullname"
@@ -113,7 +154,7 @@ const Signup = () => {
           <input
             type="email"
             name="email"
-            placeholder="Gloryjain@gmail.com"
+            placeholder="example@example.com"
             value={formData.email}
             onChange={handleChange}
             required
@@ -129,7 +170,7 @@ const Signup = () => {
           <input
             type="password"
             name="password"
-            placeholder="password"
+            placeholder="Password"
             value={formData.password}
             onChange={handleChange}
             required
@@ -156,9 +197,19 @@ const Signup = () => {
               Recruiter
             </label>
           </div>
-          <input type="file" name="resume" onChange={handleChange} />
+          <input
+            type="file"
+            name="resume"
+            accept="image/*"
+            onChange={handleChange}
+          />
           <button type="submit">Sign Up</button>
         </form>
+
+        {/* Show Success or Error Message */}
+        
+        {error && <div className="error">{error}</div>}
+
         <p className="signup-footer">
           Already have an account? <Link to="/login">Login</Link>
         </p>
