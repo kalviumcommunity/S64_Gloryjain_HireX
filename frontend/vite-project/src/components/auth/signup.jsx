@@ -12,8 +12,7 @@ const Signup = () => {
     resume: null,
   });
 
-  // const [message, setMessage] = useState("");  // To hold success message
-  const [error, setError] = useState("");      // To hold error message
+  const [error, setError] = useState(""); // To hold error message
 
   const handleChange = (e) => {
     const { name, value, type, files } = e.target;
@@ -37,11 +36,10 @@ const Signup = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:5000/api/users", data);
-      
+      const response = await axios.post("http://localhost:5000/api/users/register", data);
       // If signup is successful, show success message
       alert("User registered successfully!");
-      setError("");  // Clear any previous error
+      setError(""); // Clear any previous error
       setFormData({
         fullname: "",
         email: "",
@@ -52,12 +50,12 @@ const Signup = () => {
       }); // Reset form fields after success
     } catch (error) {
       console.error("Signup error:", error.response?.data || error.message);
-      
+
       // Show error message if signup fails
       setError("Signup failed! Please try again.");
-      
     }
   };
+
 
   return (
     <div className="signup-container">
