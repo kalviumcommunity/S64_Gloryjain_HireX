@@ -1,147 +1,99 @@
+// pages/login.jsx
+
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    role: "student",
   });
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    console.log("Login Data:", formData);
-    // Add login logic here
+    setError("");
+
+    try {
+      const response = await fetch("http://localhost:5000/api/users/users/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        navigate("/home");
+      } else {
+        setError(data.message || "Login failed");
+      }
+    } catch (err) {
+      console.error("Login error:", err);
+      setError("An error occurred during login");
+    }
   };
 
   return (
-    <div className="login-container">
-      <style>
-        {`
-          .login-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background: #f4f6f9;
-            padding: 20px;
-          }
-
-          .login-box {
-            background: white;
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-          }
-
-          .login-logo {
-            width: 120px;
-            margin: 0 auto 20px;
-          }
-
-          .login-box h2 {
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #333;
-          }
-
-          .login-box input {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-          }
-
-          .login-box button {
-            width: 100%;
-            background: #007bff;
-            color: white;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            margin-top: 15px;
-            transition: background 0.3s;
-          }
-
-          .login-box button:hover {
-            background: #0056b3;
-          }
-
-          .login-footer {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #555;
-          }
-
-          .login-footer a {
-            color: #007bff;
-            text-decoration: none;
-          }
-        `}
-      </style>
-      
-      <div className="login-box">
-        <img
-          src="path_to_logo.png" // Replace with your logo image path
-          alt="Logo"
-          className="login-logo"
-        />
-        <h2>Login</h2>
-        <form onSubmit={handleLogin}>
-          <input
-            type="email"
-            name="email"
-            placeholder="aryan@gmail.com"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="password"
-            name="password"
-            placeholder="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-blue-600">HireX</h1>
+          <p className="text-gray-600 mt-2">Login to your account</p>
+        </div>
+        <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label>
-              <input
-                type="radio"
-                name="role"
-                value="student"
-                checked={formData.role === "student"}
-                onChange={handleChange}
-              />
-              Student
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="role"
-                value="recruiter"
-                checked={formData.role === "recruiter"}
-                onChange={handleChange}
-              />
-              Recruiter
-            </label>
+            <label className="block text-gray-700 font-medium">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="w-full border border-gray-300 rounded-lg p-4 text-gray-800"
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
           </div>
-          <button type="submit">Login</button>
+          <div>
+            <label className="block text-gray-700 font-medium">Password</label>
+            <input
+              type="password"
+              name="password"
+              className="w-full border border-gray-300 rounded-lg p-4 text-gray-800"
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+          <div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 focus:outline-none"
+            >
+              Login
+            </button>
+          </div>
         </form>
-        <p className="login-footer">
-          Don’t have an account? <Link to="/signup">Signup</Link>
-        </p>
+        <div className="text-center mt-6">
+          <p className="text-sm">
+            Don't have an account?{" "}
+            <Link to="/signup" className="text-blue-600 hover:underline">
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
