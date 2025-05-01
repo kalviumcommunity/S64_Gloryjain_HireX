@@ -2,34 +2,32 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import userRoutes from "./routes/user.routes.js";
-import companyRoutes from "./routes/company.routes.js"; // Import company routes
+import companyRoutes from "./routes/company.routes.js";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Middleware to parse JSON
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
 // Routes
-app.use('/api/users', userRoutes);
-app.use('/api/companies', companyRoutes); // Register company route
+app.use("/api/users", userRoutes);
+app.use("/api/companies", companyRoutes);
 
-// Test route
-app.get('/', (req, res) => {
-    res.send('API is running...');
-});
 
-// Connect to MongoDB
+
+// MongoDB + Server start
+const PORT = process.env.PORT || 5000;
+
 mongoose.connect(process.env.MONGO_URL)
-    .then(() => {
-        console.log("✅ MongoDB connected");
-        // Start server
-        app.listen(PORT, () => {
-            console.log(`🚀 Server is running on http://localhost:${PORT}`);
-        });
-    })
-    .catch((err) => {
-        console.error("❌ MongoDB connection failed:", err);
+  .then(() => {
+    console.log("✅ MongoDB connected");
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
     });
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err);
+  });
