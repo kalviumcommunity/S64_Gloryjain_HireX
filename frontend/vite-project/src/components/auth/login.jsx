@@ -1,5 +1,3 @@
-// pages/login.jsx
-
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -20,7 +18,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/users/login", {
+      const response = await fetch("http://localhost:5000/api/users/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -34,8 +32,7 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("user", JSON.stringify(data.user)); // No token now
         navigate("/home");
       } else {
         setError(data.message || "Login failed");
