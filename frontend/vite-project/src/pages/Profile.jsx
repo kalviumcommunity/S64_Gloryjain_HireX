@@ -6,40 +6,40 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
-  // const [editForm, setEditForm] = useState({
-  //   fullname: '',
-  //   email: '',
-  //   phoneNumber: '',
-  //   bio: '',
-  //   skills: '',
-  //   resume: null
-  // });
+  const [editForm, setEditForm] = useState({
+    fullname: '',
+    email: '',
+    phoneNumber: '',
+    bio: '',
+    skills: '',
+    resume: null
+  });
 
-  // useEffect(() => {
-  //   const userFromStorage = localStorage.getItem('user');
-  //   if (!userFromStorage) {
-  //     navigate('/login');
-  //     return;
-  //   }
-  //   const parsedUser = JSON.parse(userFromStorage);
-  //   setUser(parsedUser);
-  //   setEditForm({
-  //     fullname: parsedUser.fullname || '',
-  //     email: parsedUser.email || '',
-  //     phoneNumber: parsedUser.phoneNumber || '',
-  //     bio: parsedUser.bio || 'Experienced software developer',
-  //     skills: parsedUser.skills || 'Nextjs14,Typescript,Prisma,developer',
-  //     resume: null
-  //   });
-  // }, [navigate]);
+  useEffect(() => {
+    const userFromStorage = localStorage.getItem('user');
+    if (!userFromStorage) {
+      navigate('/login');
+      return;
+    }
+    const parsedUser = JSON.parse(userFromStorage);
+    setUser(parsedUser);
+    setEditForm({
+      fullname: parsedUser.fullname || '',
+      email: parsedUser.email || '',
+      phoneNumber: parsedUser.phoneNumber || '',
+      bio: parsedUser.bio || 'Experienced software developer',
+      skills: parsedUser.skills || 'Nextjs14,Typescript,Prisma,developer',
+      resume: null
+    });
+  }, [navigate]);
 
-  // const handleUpdateProfile = () => {
-  //   // Here we'll add the API call to update the profile
-  //   const updatedUser = { ...user, ...editForm };
-  //   localStorage.setItem('user', JSON.stringify(updatedUser));
-  //   setUser(updatedUser);
-  //   setIsEditing(false);
-  // };
+  const handleUpdateProfile = () => {
+    // Here we'll add the API call to update the profile
+    const updatedUser = { ...user, ...editForm };
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    setIsEditing(false);
+  };
 
   if (!user) return null;
 

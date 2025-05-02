@@ -7,7 +7,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
-  //const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const userFromStorage = localStorage.getItem("user");
@@ -22,12 +22,12 @@ const Navbar = () => {
     navigate("/login");
   };
 
-  // const handleDeleteAccount = () => {
-  //   // Here we'll add the API call to delete the account
-  //   localStorage.removeItem("user");
-  //   setUser(null);
-  //   navigate("/login");
-  // };
+  const handleDeleteAccount = () => {
+    // Here we'll add the API call to delete the account
+    localStorage.removeItem("user");
+    setUser(null);
+    navigate("/login");
+  };
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
@@ -158,9 +158,9 @@ const Navbar = () => {
                   <button onClick={handleLogout} className="dropdown-item">
                     <i className="fas fa-sign-out-alt"></i> Logout
                   </button>
-                  {/* <button onClick={() => setShowDeleteConfirm(true)} className="dropdown-item delete-option">
+                  <button onClick={() => setShowDeleteConfirm(true)} className="dropdown-item delete-option">
                     <i className="fas fa-trash"></i> Delete Account
-                  </button> */}
+                  </button>
                 </div>
               </div>
             )}
@@ -177,7 +177,7 @@ const Navbar = () => {
         )}
       </div>
 
-      {/* {showDeleteConfirm && (
+      {showDeleteConfirm && (
         <div className="modal-overlay">
           <div className="confirm-delete-modal">
             <h3>Delete Account</h3>
@@ -195,6 +195,6 @@ const Navbar = () => {
       )}
     </nav>
   );
-}; */}
+};
 
 export default Navbar;
