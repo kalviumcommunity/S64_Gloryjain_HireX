@@ -2,46 +2,172 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 18px 40px;
+    padding: 15px 40px;
     background-color: white;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #eee;
+  }
+  
+  .navbar-left {
+    display: flex;
+    align-items: center;
   }
   
   .logo {
     font-size: 24px;
     font-weight: bold;
+    color: #000;
+    text-decoration: none;
   }
   
-  .red {
-    color: red;
+  .logo .x {
+    color: #ff0000;
+  }
+  
+  .navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 30px;
   }
   
   .navbar-right a {
-    margin-left: 20px;
     text-decoration: none;
+    color: #333;
     font-weight: 500;
-    color: black;
+    font-size: 15px;
+    transition: color 0.3s;
+  }
+  
+  .navbar-right a:hover {
+    color: #7b2cbf;
   }
   
   .navbar-right .login-btn {
     background-color: #7b2cbf;
     color: white;
-    padding: 8px 16px;
+    padding: 8px 20px;
     border-radius: 6px;
-    box-shadow: 0 2px 4px rgba(123, 44, 191, 0.4);
+    transition: background-color 0.3s;
+  }
+  
+  .navbar-right .login-btn:hover {
+    background-color: #6a24a6;
   }
   
   .navbar-right .signup-btn {
     background-color: white;
-    color: black;
-    padding: 8px 16px;
+    color: #333;
+    padding: 8px 20px;
     border-radius: 6px;
-    border: 1px solid #ccc;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-left: 10px;
+    border: 1px solid #ddd;
+    transition: all 0.3s;
   }
   
-  .navbar-right .selected {
-    box-shadow: inset 0 0 0 2px white;
+  .navbar-right .signup-btn:hover {
+    background-color: #f5f5f5;
+    border-color: #7b2cbf;
+    color: #7b2cbf;
+  }
+  
+  .navbar-right .active {
+    color: #7b2cbf;
+  }
+  
+  .user-profile {
+    position: relative;
+  }
+  
+  .profile-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  .profile-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #7b2cbf;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 500;
+    font-size: 18px;
+    overflow: hidden;
+  }
+  
+  .profile-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .profile-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 10px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 240px;
+    z-index: 1000;
+  }
+  
+  .dropdown-header {
+    padding: 16px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .user-info {
+    flex: 1;
+  }
+  
+  .user-name {
+    font-weight: 500;
+    color: #333;
+    margin: 0;
+  }
+  
+  .user-role {
+    font-size: 13px;
+    color: #666;
+    margin: 4px 0 0;
+  }
+  
+  .dropdown-menu {
+    padding: 8px 0;
+  }
+  
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    font-size: 14px;
+  }
+  
+  .dropdown-item:hover {
+    background-color: #f5f5f5;
+    color: #7b2cbf;
+  }
+  
+  .dropdown-item i {
+    font-size: 16px;
+    width: 20px;
   }
   

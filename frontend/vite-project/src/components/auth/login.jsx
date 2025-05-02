@@ -1,19 +1,25 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import Navbar from "./Navbar";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    role: "student"
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -23,16 +29,13 @@ const Login = () => {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem("user", JSON.stringify(data.user)); // No token now
+        localStorage.setItem("user", JSON.stringify(data.user));
         navigate("/home");
       } else {
         setError(data.message || "Login failed");
@@ -44,53 +47,179 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-sm">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-600">HireX</h1>
-          <p className="text-gray-600 mt-2">Login to your account</p>
-        </div>
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-gray-700 font-medium">Email</label>
+    <div className="auth-container">
+      <style>
+        {`
+          .auth-container {
+            min-height: 100vh;
+            background: #ffffff;
+          }
+
+          .auth-content {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 40px;
+          }
+
+          .auth-title {
+            font-size: 24px;
+            color: #000;
+            margin-bottom: 30px;
+            font-weight: 600;
+          }
+
+          .form-group {
+            margin-bottom: 20px;
+          }
+
+          .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+          }
+
+          .form-control {
+            width: 100%;
+            padding: 10px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+          }
+
+          .form-control:focus {
+            outline: none;
+            border-color: #7b2cbf;
+          }
+
+          .role-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+          }
+
+          .role-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+          }
+
+          .role-option input {
+            cursor: pointer;
+          }
+
+          .submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+          }
+
+          .submit-btn:hover {
+            background: #333;
+          }
+
+          .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+          }
+
+          .auth-footer a {
+            color: #7b2cbf;
+            text-decoration: none;
+            font-weight: 500;
+          }
+
+          .auth-footer a:hover {
+            text-decoration: underline;
+          }
+
+          .error-message {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 10px;
+          }
+        `}
+      </style>
+
+      <Navbar />
+      
+      <div className="auth-content">
+        <h2 className="auth-title">Login</h2>
+        
+        {error && <div className="error-message">{error}</div>}
+        
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
             <input
               type="email"
+              id="email"
               name="email"
-              className="w-full border border-gray-300 rounded-lg p-4 text-gray-800"
+              className="form-control"
+              placeholder="email@gmail.com"
               value={formData.email}
               onChange={handleChange}
               required
             />
           </div>
-          <div>
-            <label className="block text-gray-700 font-medium">Password</label>
+
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
             <input
               type="password"
+              id="password"
               name="password"
-              className="w-full border border-gray-300 rounded-lg p-4 text-gray-800"
+              className="form-control"
+              placeholder="password"
               value={formData.password}
               onChange={handleChange}
               required
             />
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 focus:outline-none"
-            >
-              Login
-            </button>
+
+          <div className="role-group">
+            <label className="role-option">
+              <input
+                type="radio"
+                name="role"
+                value="student"
+                checked={formData.role === "student"}
+                onChange={handleChange}
+              />
+              Student
+            </label>
+            <label className="role-option">
+              <input
+                type="radio"
+                name="role"
+                value="recruiter"
+                checked={formData.role === "recruiter"}
+                onChange={handleChange}
+              />
+              Recruiter
+            </label>
           </div>
+
+          <button type="submit" className="submit-btn">
+            Login
+          </button>
         </form>
-        <div className="text-center mt-6">
-          <p className="text-sm">
-            Don't have an account?{" "}
-            <Link to="/signup" className="text-blue-600 hover:underline">
-              Sign up
-            </Link>
-          </p>
-        </div>
+
+        <p className="auth-footer">
+          Don't have an account? <Link to="/signup">Signup</Link>
+        </p>
       </div>
     </div>
   );
