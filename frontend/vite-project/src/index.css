@@ -21,10 +21,16 @@ body {
   min-height: 100vh;
   background-color: #ffffff;
   color: #333;
+  padding-top: 64px;
 }
 
 #root {
   min-height: 100vh;
+}
+
+.navbar-spacer {
+  height: 16px;
+  width: 100%;
 }
 
 button {

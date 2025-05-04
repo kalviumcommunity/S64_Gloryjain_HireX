@@ -259,7 +259,7 @@ const Signup = () => {
                             id="password"
                             name="password"
                             className="form-control"
-                            placeholder="password"
+                            placeholder="•••••••••"
                             value={formData.password}
                             onChange={handleChange}
                             required

@@ -98,7 +98,10 @@ const handleMulterError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         // A Multer error occurred when uploading.
         console.error("Multer Error:", err);
-        return res.status(400).json({ message: `File Upload Error: ${err.message}` });
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ message: 'File size too large. Maximum size is 5MB.' });
+        }
+        return res.status(400).json({ message: err.message });
     } else if (err) {
         // An unknown error occurred (could be from fileFilter or destination function).
         console.error("File Upload Related Error:", err);
@@ -113,4 +116,21 @@ const handleMulterError = (err, req, res, next) => {
     next();
 };
 
-export { upload, handleMulterError }; // Export both upload and the error handler
+// Cleanup files on error
+const cleanupFilesOnError = (files) => {
+    if (!files) return;
+    
+    Object.values(files).forEach(fileArray => {
+        if (Array.isArray(fileArray)) {
+            fileArray.forEach(file => {
+                if (file && file.path) {
+                    fs.unlink(file.path, (err) => {
+                        if (err) console.error(`Error deleting file ${file.path}:`, err);
+                    });
+                }
+            });
+        }
+    });
+};
+
+export { upload, handleMulterError, cleanupFilesOnError }; // Export both upload and the error handler

@@ -1,0 +1,240 @@
+.applicants-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+  position: relative; /* Ensure stacking context for z-index */
+}
+
+.navbar-spacer {
+  height: 80px;
+}
+
+.applicants-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-top: 20px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #6B7280;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 0;
+  margin-right: 24px;
+}
+
+.back-button:hover {
+  color: #111827;
+}
+
+.applicants-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.applicants-container {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.job-info-card {
+  padding: 24px;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.job-info-card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px;
+}
+
+.job-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6B7280;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.job-info-card p {
+  color: #6B7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+.applicants-table {
+  width: 100%;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 0.5fr;
+  background-color: #F9FAFB;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B7280;
+  border-bottom: 1px solid #E5E7EB;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1.5fr 1fr 0.5fr;
+  padding: 16px 24px;
+  font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #E5E7EB;
+  align-items: center;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.name-column {
+  font-weight: 500;
+}
+
+.resume-link {
+  color: #8B5CF6;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 14px;
+  text-align: left;
+}
+
+.resume-link:hover {
+  text-decoration: underline;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B7280;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background-color: #F3F4F6;
+  color: #111827;
+}
+
+.empty-state {
+  padding: 48px 0;
+  text-align: center;
+  color: #6B7280;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f7fb;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #111827;
+  animation: spin 1s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Dropdown styles */
+.dropdown-container {
+  position: relative;
+}
+
+.action-dropdown {
+  position: absolute;
+  right: 0;
+  z-index: 100; /* Very high z-index to ensure it's on top */
+  width: 150px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+/* First applicant: dropdown below */
+.position-0 .action-dropdown {
+  top: 100%;
+  margin-top: 5px;
+}
+
+/* Second and third applicants: dropdown above */
+.position-1 .action-dropdown,
+.position-2 .action-dropdown {
+  bottom: 100%;
+  margin-bottom: 5px;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #F3F4F6;
+}
+
+.dropdown-item:not(:last-child) {
+  border-bottom: 1px solid #E5E7EB;
+}
+
+/* Status badge styles */
+.status-badge {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 10px;
+}
+
+.status-badge.accepted {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.status-badge.rejected {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+} 
