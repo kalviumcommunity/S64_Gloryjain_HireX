@@ -32,7 +32,7 @@ const StudentJobs = () => {
       id: 1,
       company: 'Google',
       logo: 'G',
-      location: 'India',
+      location: 'Bangalore',
       position: 'FullStack Developer',
       description: "We're looking for a Senior Full-Stack Developer who can write clean, efficient, and scalable code, and is proficient in handling both frontend and backend development seamlessly.",
       postedDate: 'Today',
@@ -51,8 +51,8 @@ const StudentJobs = () => {
       id: 2,
       company: 'Microsoft India',
       logo: 'M',
-      location: 'India',
-      position: 'FullStack Developer',
+      location: 'Delhi NCR',
+      position: 'Frontend Developer',
       description: "Seeking a Senior Full-Stack Developer skilled in building robust frontend and backend solutions, with a strong focus on writing clean, efficient, and maintainable code.",
       postedDate: 'Today',
       positions: 2,
@@ -70,7 +70,7 @@ const StudentJobs = () => {
       id: 3,
       company: 'Amazon',
       logo: 'A',
-      location: 'India',
+      location: 'Hyderabad',
       position: 'Frontend Developer',
       description: "Looking for a Frontend Developer with strong skills in React and TypeScript to build responsive, user-focused interfaces for millions of users.",
       postedDate: 'Today',
@@ -129,6 +129,35 @@ const StudentJobs = () => {
   const handleSalaryChange = (salary) => {
     setSelectedSalary(salary === selectedSalary ? null : salary);
   };
+
+  // Filter jobs based on selected criteria
+  const filteredJobs = jobs.filter(job => {
+    // Location filter
+    if (selectedLocation && job.location !== selectedLocation) {
+      return false;
+    }
+    
+    // Industry/position filter
+    if (selectedIndustry && !job.position.includes(selectedIndustry)) {
+      return false;
+    }
+    
+    // Salary filter - would need more complex logic in a real app
+    // This is a simplified version
+    if (selectedSalary) {
+      if (selectedSalary === '0 - 40k' && !job.salary.includes('LPA')) {
+        return false;
+      }
+      if (selectedSalary === '40k - 1Lakh' && parseInt(job.salary) < 12) {
+        return false;
+      }
+      if (selectedSalary === '1Lakh - 5Lakh' && parseInt(job.salary) < 20) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
 
   return (
     <div className="student-jobs-page">
@@ -383,6 +412,55 @@ const StudentJobs = () => {
             background-color: #7C3AED;
           }
 
+          /* Empty state */
+          .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+          }
+
+          .empty-state-image {
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+          }
+
+          .empty-state-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 12px;
+          }
+
+          .empty-state-text {
+            font-size: 16px;
+            color: #6B7280;
+            max-width: 500px;
+            margin-bottom: 24px;
+          }
+
+          .clear-filters-button {
+            padding: 10px 20px;
+            background-color: #8B5CF6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          }
+
+          .clear-filters-button:hover {
+            background-color: #7C3AED;
+          }
+
           /* Media Queries */
           @media (max-width: 1024px) {
             .jobs-container {
@@ -566,7 +644,7 @@ const StudentJobs = () => {
                 checked={selectedSalary === '40k - 1Lakh'}
                 onChange={() => handleSalaryChange('40k - 1Lakh')}
               />
-              <label htmlFor="40k-1lakh" className="filter-option-label">40k - 1Lakh</label>
+              <label htmlFor="40k-1lakh" className="filter-option-label">40k to 1lakh</label>
             </div>
             <div className="filter-option">
               <input 
@@ -577,46 +655,68 @@ const StudentJobs = () => {
                 checked={selectedSalary === '1Lakh - 5Lakh'}
                 onChange={() => handleSalaryChange('1Lakh - 5Lakh')}
               />
-              <label htmlFor="1lakh-5lakh" className="filter-option-label">1Lakh - 5Lakh</label>
+              <label htmlFor="1lakh-5lakh" className="filter-option-label">1lakh to 5lakh</label>
             </div>
           </div>
         </div>
         
         <div className="jobs-listing">
-          {jobs.map(job => (
-            <div className="job-card" key={job.id}>
-              <div className={`job-card-logo ${job.company.toLowerCase()}`}>
-                {job.logo}
-              </div>
-              
-              <div className="job-card-content">
-                <div className="job-date">{job.postedDate}</div>
-                
-                <div className="job-card-header">
-                  <div className="job-card-company">{job.company}</div>
-                  <div className="job-card-location">{job.location}</div>
+          {filteredJobs.length > 0 ? (
+            filteredJobs.map(job => (
+              <div className="job-card" key={job.id}>
+                <div className={`job-card-logo ${job.company.toLowerCase()}`}>
+                  {job.logo}
                 </div>
                 
-                <h3 className="job-card-title">{job.position}</h3>
-                <p className="job-card-description">{job.description}</p>
+                <div className="job-card-content">
+                  <div className="job-date">{job.postedDate}</div>
+                  
+                  <div className="job-card-header">
+                    <div className="job-card-company">{job.company}</div>
+                    <div className="job-card-location">{job.location}</div>
+                  </div>
+                  
+                  <h3 className="job-card-title">{job.position}</h3>
+                  <p className="job-card-description">{job.description}</p>
+                  
+                  <div className="tag-container">
+                    <span className="tag positions">{job.positions} Positions</span>
+                    <span className="tag type">{job.type}</span>
+                    <span className="tag salary">{job.salary}</span>
+                  </div>
+                </div>
                 
-                <div className="tag-container">
-                  <span className="tag positions">{job.positions} Positions</span>
-                  <span className="tag type">{job.type}</span>
-                  <span className="tag salary">{job.salary}</span>
+                <div className="job-card-actions">
+                  <button className="action-button details-button" onClick={() => handleDetailsClick(job)}>
+                    Details
+                  </button>
+                  <button className="action-button save-button" onClick={(e) => handleSaveClick(e, job)}>
+                    Save For Later
+                  </button>
                 </div>
               </div>
-              
-              <div className="job-card-actions">
-                <button className="action-button details-button" onClick={() => handleDetailsClick(job)}>
-                  Details
-                </button>
-                <button className="action-button save-button" onClick={(e) => handleSaveClick(e, job)}>
-                  Save For Later
-                </button>
-              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <img 
+                src="https://i.imgur.com/qsT4Jk2.png" 
+                alt="No jobs found" 
+                className="empty-state-image" 
+              />
+              <h3 className="empty-state-title">No jobs match your filter criteria</h3>
+              <p className="empty-state-text">Try adjusting your filters or browse all available jobs</p>
+              <button 
+                className="clear-filters-button" 
+                onClick={() => {
+                  setSelectedLocation(null);
+                  setSelectedIndustry(null);
+                  setSelectedSalary(null);
+                }}
+              >
+                Clear All Filters
+              </button>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

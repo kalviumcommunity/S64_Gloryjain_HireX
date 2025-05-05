@@ -1,6 +1,6 @@
 import React from 'react';
 import Navbar from '../components/auth/Navbar';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Browse = () => {
   // Sample job data with improved descriptions
@@ -67,6 +67,34 @@ const Browse = () => {
     }
   ];
 
+  const navigateToJob = (jobId) => {
+    window.location.href = `/jobs/${jobId}`;
+  };
+
+  const handleSaveJob = (e, job) => {
+    e.stopPropagation();
+    
+    // Get existing saved jobs from localStorage
+    const savedJobs = JSON.parse(localStorage.getItem('savedJobs') || '[]');
+    
+    // Check if the job is already saved
+    const isJobAlreadySaved = savedJobs.some(savedJob => savedJob.id === job.id);
+    
+    if (isJobAlreadySaved) {
+      alert(`This job is already in your saved list.`);
+      return;
+    }
+    
+    // Add the job to saved jobs
+    savedJobs.push(job);
+    
+    // Save back to localStorage
+    localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
+    
+    // Show success message
+    alert(`Job saved: ${job.position} at ${job.company}`);
+  };
+
   return (
     <div className="browse-page">
       <Navbar />
@@ -119,7 +147,7 @@ const Browse = () => {
             background: white;
             border-radius: 16px;
             padding: 28px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
             position: relative;
             text-decoration: none;
             color: inherit;
@@ -127,8 +155,9 @@ const Browse = () => {
             transition: all 0.3s ease;
             border: 1px solid #f1f5f9;
             margin-bottom: 24px;
-            min-height: 340px;
+            min-height: 450px;
             overflow: hidden;
+            cursor: pointer;
           }
 
           .job-card::before {
@@ -138,14 +167,14 @@ const Browse = () => {
             left: 0;
             width: 5px;
             height: 100%;
-            background: #6e46ba;
+            background: #8B5CF6;
             opacity: 0;
             transition: opacity 0.3s ease;
           }
 
           .job-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 16px 30px rgba(0, 0, 0, 0.1);
             border-color: #e2e8f0;
           }
 
@@ -169,7 +198,7 @@ const Browse = () => {
             position: absolute;
             top: 24px;
             right: 24px;
-            background: #f8fafc;
+            background: #f1f5f9;
             border: none;
             color: #64748b;
             cursor: pointer;
@@ -180,28 +209,34 @@ const Browse = () => {
             height: 36px;
             border-radius: 50%;
             transition: all 0.2s ease;
+            font-size: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            z-index: 2;
           }
 
           .bookmark-btn:hover {
-            background: #f1f5f9;
+            background: #e2e8f0;
             color: #6e46ba;
+            transform: scale(1.05);
           }
 
           .company-header {
             display: flex;
             align-items: center;
             margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #f1f5f9;
           }
 
           .company-logo {
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-right: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
             background: white;
             padding: 6px;
             border: 1px solid #f1f5f9;
@@ -219,7 +254,7 @@ const Browse = () => {
 
           .company-name {
             font-size: 1.1rem;
-            font-weight: 600;
+            font-weight: 700;
             color: #1e293b;
             margin-bottom: 4px;
           }
@@ -258,9 +293,15 @@ const Browse = () => {
 
           .job-meta {
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 84px;
+          }
+
+          .meta-row {
+            display: flex;
+            gap: 24px;
             flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 28px;
           }
 
           .meta-tag {
@@ -270,6 +311,8 @@ const Browse = () => {
             font-weight: 500;
             display: flex;
             align-items: center;
+            width: fit-content;
+            color:rgb(255, 255, 255);
           }
 
           .positions-tag {
@@ -283,18 +326,29 @@ const Browse = () => {
           }
 
           .time-tag {
-            background: #6e46ba;
+            background: #8B5CF6;
             color: white;
+            padding: 6px 14px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            border-radius: 20px;
+            box-shadow: none;
+            border: none;
+            text-shadow: none;
+            letter-spacing: normal;
           }
 
           .time-tag::before {
-            content: '⏱️';
-            margin-right: 6px;
+            content: '';
+            margin-right: 0;
+            display: none;
+            color: white;
           }
 
           .salary-tag {
             background: #e0f2fe;
             color: #0369a1;
+            order: 3;
           }
 
           .salary-tag::before {
@@ -321,29 +375,33 @@ const Browse = () => {
             outline: none;
             flex: 1;
             text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
           }
 
           .details-button {
-            background: #f8fafc;
-            color: #334155;
-            border: 1px solid #e2e8f0;
+            background: #e2e8f0;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
           }
 
           .details-button:hover {
-            background: #f1f5f9;
-            border-color: #cbd5e1;
+            background: #cbd5e1;
+            border-color: #94a3b8;
+            color: #0f172a;
+            transform: translateY(-2px);
           }
 
           .save-button {
-            background: #6e46ba;
+            background: #8B5CF6;
             color: white;
-            border: 1px solid #6e46ba;
+            border: 1px solid #8B5CF6;
           }
 
           .save-button:hover {
-            background: #5d3ba1;
-            border-color: #5d3ba1;
-            box-shadow: 0 4px 12px rgba(110, 70, 186, 0.2);
+            background: #7C3AED;
+            border-color: #7C3AED;
+            box-shadow: 0 4px 12px rgba(110, 70, 186, 0.3);
+            transform: translateY(-2px);
           }
 
           /* For the one-day-ago jobs at the bottom */
@@ -395,7 +453,7 @@ const Browse = () => {
 
         <div className="jobs-grid">
           {jobs.slice(0, 3).map(job => (
-            <Link to={`/jobs/${job.id}`} key={job.id} className="job-card">
+            <div key={job.id} className="job-card" onClick={() => navigateToJob(job.id)}>
               <div className="job-date">Today</div>
               
               <div className="company-header">
@@ -431,16 +489,22 @@ const Browse = () => {
               <p className="job-description">{job.description}</p>
               
               <div className="job-meta">
-                <span className="meta-tag positions-tag">{job.positions} Positions</span>
-                <span className="meta-tag time-tag">{job.type}</span>
+                <div className="meta-row">
+                  <span className="meta-tag positions-tag">{job.positions} Positions</span>
+                  <span className="meta-tag time-tag">{job.type}</span>
+                </div>
                 <span className="meta-tag salary-tag">{job.salary}</span>
               </div>
               
               <div className="action-buttons">
-                <button className="action-button details-button">Details</button>
-                <button className="action-button save-button">Save For Later</button>
+                <button className="action-button details-button" onClick={(e) => { e.stopPropagation(); navigateToJob(job.id); }}>
+                  Details
+                </button>
+                <button className="action-button save-button" onClick={(e) => handleSaveJob(e, job)}>
+                  Save For Later
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
 
@@ -448,9 +512,9 @@ const Browse = () => {
           <span className="days-ago">1 day ago</span>
           <div className="jobs-grid">
             {jobs.slice(3).map(job => (
-              <Link to={`/jobs/${job.id}`} key={job.id} className="job-card">
-                <button className="bookmark-btn">
-                  ⚐
+              <div key={job.id} className="job-card" onClick={() => navigateToJob(job.id)}>
+                <button className="bookmark-btn" onClick={(e) => { e.stopPropagation(); handleSaveJob(e, job); }}>
+                  ★
                 </button>
                 
                 <div className="company-header">
@@ -470,16 +534,22 @@ const Browse = () => {
                 <p className="job-description">{job.description}</p>
                 
                 <div className="job-meta">
-                  <span className="meta-tag positions-tag">{job.positions} Positions</span>
-                  <span className="meta-tag time-tag">{job.type}</span>
+                  <div className="meta-row">
+                    <span className="meta-tag positions-tag">{job.positions} Positions</span>
+                    <span className="meta-tag time-tag">{job.type}</span>
+                  </div>
                   <span className="meta-tag salary-tag">{job.salary}</span>
                 </div>
                 
                 <div className="action-buttons">
-                  <button className="action-button details-button">Details</button>
-                  <button className="action-button save-button">Save For Later</button>
+                  <button className="action-button details-button" onClick={(e) => { e.stopPropagation(); navigateToJob(job.id); }}>
+                    Details
+                  </button>
+                  <button className="action-button save-button" onClick={(e) => handleSaveJob(e, job)}>
+                    Save For Later
+                  </button>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         </div>

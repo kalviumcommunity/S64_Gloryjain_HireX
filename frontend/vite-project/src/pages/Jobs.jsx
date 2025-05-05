@@ -315,19 +315,23 @@ const Jobs = () => {
         }
         
         .new-job-btn {
-          background-color: #111827;
+          background-color: #8B5CF6;
           color: white;
-          padding: 10px 20px;
+          padding: 12px 24px;
           border-radius: 6px;
           font-size: 14px;
-          font-weight: 500;
+          font-weight: 600;
           border: none;
           cursor: pointer;
           text-decoration: none;
+          box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+          transition: all 0.2s ease;
         }
         
         .new-job-btn:hover {
-          background-color: #1f2937;
+          background-color: #7C3AED;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
         }
         
         .jobs-table {
@@ -388,16 +392,18 @@ const Jobs = () => {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: transparent;
+          background: #f3f4f6;
           border: none;
-          padding: 6px;
+          padding: 8px;
+          border-radius: 4px;
           cursor: pointer;
-          color: #6b7280;
+          color: #4b5563;
           transition: all 0.2s ease;
         }
         
         .actions-btn:hover {
           color: #111827;
+          background: #e5e7eb;
         }
         
         .dropdown-menu {
@@ -405,7 +411,7 @@ const Jobs = () => {
           width: 170px;
           background: white;
           border-radius: 8px;
-          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           padding: 0;
           z-index: 1000;
           border: 1px solid #e5e7eb;
@@ -425,6 +431,7 @@ const Jobs = () => {
           color: #4b5563;
           text-align: left;
           font-size: 14px;
+          font-weight: 500;
           border-bottom: 1px solid #f3f4f6;
         }
         
@@ -434,6 +441,7 @@ const Jobs = () => {
         
         .dropdown-item:hover {
           background-color: #f9fafb;
+          color: #111827;
         }
         
         .dropdown-item svg.edit-icon {
@@ -441,11 +449,15 @@ const Jobs = () => {
         }
         
         .delete-item {
-          color: #dc2626;
+          color: #ef4444;
+        }
+        
+        .delete-item:hover {
+          background-color: #fee2e2;
         }
         
         .delete-item svg.delete-icon {
-          color: #dc2626;
+          color: #ef4444;
         }
         
         .no-results {
@@ -468,12 +480,24 @@ const Jobs = () => {
           display: flex;
           align-items: center;
           gap: 10px;
-          background: #111827;
+          background: #10B981;
           color: white;
           border-radius: 6px;
           padding: 12px 16px;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
           z-index: 1000;
+          animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+          from {
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
         }
       `}</style>
     </div>
