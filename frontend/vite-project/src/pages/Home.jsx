@@ -337,22 +337,6 @@ const Home = () => {
             box-shadow: 0 8px 15px rgba(0,0,0,0.1);
           }
 
-          .bookmark-btn {
-            position: absolute;
-            top: 30px;
-            right: 30px;
-            background: none;
-            border: none;
-            font-size: 24px;
-            color: #666;
-            cursor: pointer;
-            width: 25px;
-            height: 25px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-
           .job-date {
             position: absolute;
             top: 30px;
@@ -921,6 +905,10 @@ const Home = () => {
           .apply-now-btn:hover {
             background-color: #5d3ba1;
           }
+
+          .bookmark-btn {
+            display: none; /* Hide the bookmark button */
+          }
         `}
       </style>
 
@@ -1057,12 +1045,6 @@ const Home = () => {
           ].map((job, idx) => (
             <div className="job-card" key={idx}>
               <div className="job-date">{idx === 0 ? 'Today' : '1 days ago'}</div>
-              <button className="bookmark-btn" onClick={(e) => handleSaveClick(e, job)}>
-                <svg width="16" height="20" viewBox="0 0 16 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M15 19L8 14L1 19V3C1 2.46957 1.21071 1.96086 1.58579 1.58579C1.96086 1.21071 2.46957 1 3 1H13C13.5304 1 14.0391 1.21071 14.4142 1.58579C14.7893 1.96086 15 2.46957 15 3V19Z" stroke="#666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-              
               <div className="company-info">
                 <div className="company-logo">
                   {job.company === 'Google' ? (

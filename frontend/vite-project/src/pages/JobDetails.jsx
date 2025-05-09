@@ -80,9 +80,9 @@ const JobDetails = () => {
     const applications = JSON.parse(localStorage.getItem('applications') || '[]');
     const userId = JSON.parse(localStorage.getItem('user'))?.id;
     
-    if (userId && id) {
+    if (userId && selectedJob?.id) {
       const hasApplied = applications.some(
-        app => app.jobId === parseInt(id) && app.studentId === userId
+        app => app.jobId === selectedJob.id && app.studentId === userId
       );
       setIsApplied(hasApplied);
     }
@@ -107,13 +107,13 @@ const JobDetails = () => {
     // Create new application
     const newApplication = {
       id: applications.length + 1,
-      jobId: parseInt(id),
+      jobId: selectedJob.id,
       jobTitle: selectedJob.position,
       company: selectedJob.company,
       studentId: user.id,
-      studentName: user.name,
+      studentName: user.fullname || user.name,
       studentEmail: user.email,
-      studentContact: user.contact || 'Not provided',
+      studentContact: user.phoneNumber || user.contact || 'Not provided',
       resume: 'resume.pdf', // In a real app, this would be a link to the actual resume
       appliedDate: new Date().toLocaleDateString(),
       status: 'Pending'
@@ -129,6 +129,30 @@ const JobDetails = () => {
     setIsApplied(true);
     
     alert('Application submitted successfully!');
+  };
+
+  const handleSaveJob = () => {
+    if (!selectedJob) return;
+    
+    // Get existing saved jobs from localStorage
+    const savedJobs = JSON.parse(localStorage.getItem('savedJobs') || '[]');
+    
+    // Check if the job is already saved
+    const isJobAlreadySaved = savedJobs.some(savedJob => savedJob.id === selectedJob.id);
+    
+    if (isJobAlreadySaved) {
+      alert(`This job is already in your saved list.`);
+      return;
+    }
+    
+    // Add the job to saved jobs
+    savedJobs.push(selectedJob);
+    
+    // Save back to localStorage
+    localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
+    
+    // Show success message
+    alert(`Job saved: ${selectedJob.position} at ${selectedJob.company}`);
   };
 
   if (!selectedJob) {
@@ -402,6 +426,52 @@ const JobDetails = () => {
             font-size: 24px;
           }
         }
+        
+        .action-buttons {
+          display: flex;
+          gap: 16px;
+          margin-top: 40px;
+        }
+        
+        .apply-button {
+          padding: 14px 32px;
+          background-color: #8B5CF6;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .apply-button:hover {
+          background-color: #7C3AED;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        }
+        
+        .apply-button.applied {
+          background-color: #9CA3AF;
+          cursor: not-allowed;
+        }
+        
+        .save-button {
+          padding: 14px 32px;
+          background-color: white;
+          color: #374151;
+          border: 1px solid #E5E7EB;
+          border-radius: 8px;
+          font-size: 16px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .save-button:hover {
+          background-color: #F9FAFB;
+          border-color: #D1D5DB;
+        }
       `}</style>
       
       <div className="job-details-container">
@@ -432,13 +502,20 @@ const JobDetails = () => {
           <div className="deadline">
             <strong>Application Deadline:</strong> October 15, 2023
           </div>
-          <button 
-            className="apply-button" 
-            onClick={handleApply}
-            disabled={isApplied}
-          >
-            {isApplied ? 'Already Applied' : 'Apply Now'}
-          </button>
+          <div className="action-buttons">
+            {user && user.role === 'student' && (
+              <button 
+                className={`apply-button ${isApplied ? 'applied' : ''}`} 
+                onClick={handleApply}
+                disabled={isApplied}
+              >
+                {isApplied ? 'Already Applied' : 'Apply Now'}
+              </button>
+            )}
+            <button className="save-button" onClick={handleSaveJob}>
+              Save For Later
+            </button>
+          </div>
         </div>
         
         <div className="job-content">

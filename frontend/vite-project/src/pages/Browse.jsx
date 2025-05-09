@@ -3,6 +3,8 @@ import Navbar from '../components/auth/Navbar';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Browse = () => {
+  const navigate = useNavigate();
+  
   // Sample job data with improved descriptions
   const jobs = [
     {
@@ -67,8 +69,14 @@ const Browse = () => {
     }
   ];
 
-  const navigateToJob = (jobId) => {
-    window.location.href = `/jobs/${jobId}`;
+  const viewJobDetails = (e, job) => {
+    e.stopPropagation();
+    
+    // Save the job details to localStorage to access from the job details page
+    localStorage.setItem('selectedJobDetails', JSON.stringify(job));
+    
+    // Navigate to job details page
+    navigate(`/job-details/${job.id}`);
   };
 
   const handleSaveJob = (e, job) => {
@@ -298,6 +306,9 @@ const Browse = () => {
             margin-bottom: 84px;
           }
 
+          .meta-tag{
+            color: #ffffff;
+          }
           .meta-row {
             display: flex;
             gap: 24px;
@@ -312,7 +323,6 @@ const Browse = () => {
             display: flex;
             align-items: center;
             width: fit-content;
-            color:rgb(255, 255, 255);
           }
 
           .positions-tag {
@@ -327,7 +337,7 @@ const Browse = () => {
 
           .time-tag {
             background: #8B5CF6;
-            color: white;
+            color: #FFFFFF !important;
             padding: 6px 14px;
             font-weight: 600;
             font-size: 0.9rem;
@@ -342,7 +352,6 @@ const Browse = () => {
             content: '';
             margin-right: 0;
             display: none;
-            color: white;
           }
 
           .salary-tag {
@@ -453,7 +462,7 @@ const Browse = () => {
 
         <div className="jobs-grid">
           {jobs.slice(0, 3).map(job => (
-            <div key={job.id} className="job-card" onClick={() => navigateToJob(job.id)}>
+            <div key={job.id} className="job-card" onClick={() => viewJobDetails(null, job)}>
               <div className="job-date">Today</div>
               
               <div className="company-header">
@@ -490,14 +499,14 @@ const Browse = () => {
               
               <div className="job-meta">
                 <div className="meta-row">
-                  <span className="meta-tag positions-tag">{job.positions} Positions</span>
+                  <span className="meta-tag positions-tag ">{job.positions} Positions</span>
                   <span className="meta-tag time-tag">{job.type}</span>
                 </div>
                 <span className="meta-tag salary-tag">{job.salary}</span>
               </div>
               
               <div className="action-buttons">
-                <button className="action-button details-button" onClick={(e) => { e.stopPropagation(); navigateToJob(job.id); }}>
+                <button className="action-button details-button" onClick={(e) => viewJobDetails(e, job)}>
                   Details
                 </button>
                 <button className="action-button save-button" onClick={(e) => handleSaveJob(e, job)}>
@@ -512,10 +521,8 @@ const Browse = () => {
           <span className="days-ago">1 day ago</span>
           <div className="jobs-grid">
             {jobs.slice(3).map(job => (
-              <div key={job.id} className="job-card" onClick={() => navigateToJob(job.id)}>
-                <button className="bookmark-btn" onClick={(e) => { e.stopPropagation(); handleSaveJob(e, job); }}>
-                  ★
-                </button>
+              <div key={job.id} className="job-card" onClick={() => viewJobDetails(null, job)}>
+                <div className="job-date">1 day ago</div>
                 
                 <div className="company-header">
                   <div className={`company-logo ${job.company.toLowerCase().replace(' ', '-')}-logo`}>
@@ -542,7 +549,7 @@ const Browse = () => {
                 </div>
                 
                 <div className="action-buttons">
-                  <button className="action-button details-button" onClick={(e) => { e.stopPropagation(); navigateToJob(job.id); }}>
+                  <button className="action-button details-button" onClick={(e) => viewJobDetails(e, job)}>
                     Details
                   </button>
                   <button className="action-button save-button" onClick={(e) => handleSaveJob(e, job)}>
