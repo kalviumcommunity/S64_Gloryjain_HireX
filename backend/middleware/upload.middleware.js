@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Define the base upload directory and subdirectories
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(process.cwd(), 'backend/uploads');
 const resumeDir = path.join(uploadDir, 'resume');
 const profileDir = path.join(uploadDir, 'profile');
 
@@ -18,7 +18,6 @@ try {
     // and doesn't throw an error if the directory already exists.
     fs.mkdirSync(resumeDir, { recursive: true });
     fs.mkdirSync(profileDir, { recursive: true });
-    console.log(`Ensured directories exist:\n  - ${resumeDir}\n  - ${profileDir}`);
 } catch (err) {
     console.error("Error creating upload directories:", err);
     // Depending on the application, you might want to exit or throw a fatal error
@@ -57,14 +56,13 @@ const fileFilter = function (req, file, cb) {
     if (file.fieldname === "resume") {
         // Allowed types for resume
         const allowedResumeTypes = [
-            'application/pdf',
-            'application/msword', // .doc
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx
+            'image/jpeg',
+            'image/jpg'
         ];
         if (allowedResumeTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
-            cb(new Error('Invalid file type for resume. Only PDF, DOC, DOCX allowed.'), false);
+            cb(new Error('Invalid file type for resume. Only JPG images allowed.'), false);
         }
     } else if (file.fieldname === "profilePhoto") {
         // Allowed types for profile photo

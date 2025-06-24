@@ -5,7 +5,6 @@ import Signup from './components/auth/signup';
 import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Browse from './pages/Browse';
-import JobDetails from './pages/JobDetails';
 import Jobs from './pages/Jobs';
 import StudentJobs from './pages/StudentJobs';
 import NewJob from './pages/NewJob';
@@ -15,6 +14,7 @@ import CompanySetup from './pages/CompanySetup';
 import JobApplicants from './pages/JobApplicants';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RoleBasedRoute from './components/auth/RoleBasedRoute';
+import CareerResource from './pages/CareerResource';
 
 function App() {
   // For debugging - log that the App component has rendered
@@ -28,7 +28,7 @@ function App() {
         <Route path="/" element={<Navigate to="/home" />} />
         <Route path="/home" element={<Home />} />
         <Route path="/browse" element={<Browse />} />
-        <Route path="/job-details/:id" element={<JobDetails />} />
+        <Route path="/career-resource/:resourceType" element={<CareerResource />} />
         
         {/* Protected routes that require login */}
         <Route element={<ProtectedRoute />}>
@@ -48,7 +48,7 @@ function App() {
             <Route path="/companies" element={<Companies />} />
             <Route path="/new-company" element={<NewCompany />} />
             <Route path="/company-setup" element={<CompanySetup />} />
-            <Route path="/job-applicants" element={<JobApplicants />} />
+            <Route path="/job-applicants/:jobId" element={<JobApplicants />} />
           </Route>
         </Route>
       </Routes>

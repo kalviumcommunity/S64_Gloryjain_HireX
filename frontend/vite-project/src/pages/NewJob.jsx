@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/auth/Navbar';
 
 const NewJob = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [companies, setCompanies] = useState([]);
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
@@ -17,6 +18,8 @@ const NewJob = () => {
     numberOfPositions: '0',
     companyId: ''
   });
+  const [editMode, setEditMode] = useState(false);
+  const [editJobId, setEditJobId] = useState(null);
 
   // Check if user is logged in and is a recruiter
   useEffect(() => {
@@ -24,13 +27,10 @@ const NewJob = () => {
     if (userFromStorage) {
       const parsedUser = JSON.parse(userFromStorage);
       setUser(parsedUser);
-      
-      // If user is not a recruiter, redirect to home
       if (parsedUser.role !== 'recruiter') {
         navigate('/home');
       }
     } else {
-      // If no user is logged in, redirect to login
       navigate('/login');
     }
   }, [navigate]);
@@ -45,6 +45,26 @@ const NewJob = () => {
     }
   }, [user]);
 
+  // Prefill form if in edit mode
+  useEffect(() => {
+    if (location.state && location.state.editMode && location.state.jobData) {
+      const job = location.state.jobData;
+      setEditMode(true);
+      setEditJobId(job.id);
+      setFormData({
+        title: job.title || '',
+        description: job.description || '',
+        requirements: job.requirements || '',
+        salary: job.salary || '',
+        location: job.location || '',
+        jobType: job.jobType || '',
+        experienceLevel: job.experienceLevel || '',
+        numberOfPositions: job.numberOfPositions ? String(job.numberOfPositions) : '0',
+        companyId: job.companyId ? String(job.companyId) : ''
+      });
+    }
+  }, [location.state]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({
@@ -55,20 +75,15 @@ const NewJob = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Make sure company is selected
     if (!formData.companyId) {
       alert('Please select a company');
       return;
     }
-    
-    // Find the selected company
     const selectedCompany = companies.find(company => company.id.toString() === formData.companyId);
-    
-    // Create job data
-    const newJob = {
-      id: Date.now(),
-      recruiterId: user.id, // Associate job with recruiter ID
+    const jobData = {
+      id: editMode ? editJobId : Date.now(),
+      recruiterId: user.id || null,
+      recruiterEmail: user.email || null,
       companyName: selectedCompany.name,
       companyId: selectedCompany.id,
       title: formData.title,
@@ -79,22 +94,19 @@ const NewJob = () => {
       jobType: formData.jobType,
       experienceLevel: formData.experienceLevel,
       numberOfPositions: formData.numberOfPositions,
-      date: new Date().toISOString().split('T')[0] // Format: YYYY-MM-DD
+      date: editMode && location.state.jobData.date ? location.state.jobData.date : new Date().toISOString().split('T')[0]
     };
-    
-    // Retrieve existing jobs from localStorage
     const existingJobs = JSON.parse(localStorage.getItem('jobs') || '[]');
-    
-    // Add new job
-    const updatedJobs = [...existingJobs, newJob];
-    
-    // Save back to localStorage
+    let updatedJobs;
+    if (editMode) {
+      updatedJobs = existingJobs.map(job => job.id === editJobId ? { ...job, ...jobData } : job);
+    } else {
+      updatedJobs = [...existingJobs, jobData];
+    }
     localStorage.setItem('jobs', JSON.stringify(updatedJobs));
-    
-    // Navigate back to jobs page
-    navigate('/jobs', { 
-      state: { 
-        notification: 'Job posting created successfully.'
+    navigate('/jobs', {
+      state: {
+        notification: editMode ? 'Job updated successfully.' : 'Job posting created successfully.'
       }
     });
   };
@@ -103,7 +115,6 @@ const NewJob = () => {
     navigate('/jobs');
   };
 
-  // If user is not a recruiter or not logged in, don't render the page
   if (!user || user.role !== 'recruiter') {
     return null;
   }
@@ -112,7 +123,6 @@ const NewJob = () => {
     <div className="new-job-page">
       <Navbar />
       <div className="navbar-spacer"></div>
-      
       <div className="new-job-container">
         <div className="back-section">
           <button onClick={handleBack} className="back-button">
@@ -122,7 +132,6 @@ const NewJob = () => {
             Back
           </button>
         </div>
-        
         <div className="new-job-form-container">
           <form onSubmit={handleSubmit} className="new-job-form">
             <div className="form-grid">
@@ -247,7 +256,7 @@ const NewJob = () => {
             </div>
             
             <button type="submit" className="post-job-btn">
-              Post New Job
+              {editMode ? 'Update Job' : 'Post New Job'}
             </button>
           </form>
         </div>

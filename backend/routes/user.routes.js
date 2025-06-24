@@ -142,12 +142,15 @@ router.post('/', upload, handleMulterError, async (req, res) => {
 });
 
 // Protected routes
-router.use(authMiddleware);
+// router.use(authMiddleware); // Remove global auth middleware
 
 // GET user profile
-router.get('/profile', async (req, res) => {
+router.get('/profile', authMiddleware, async (req, res) => { // Apply as middleware
     try {
         const user = await User.findById(req.user._id).select('-password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
         res.json(user);
     } catch (error) {
         res.status(500).json({ message: 'Server Error' });
@@ -155,9 +158,9 @@ router.get('/profile', async (req, res) => {
 });
 
 // PUT - Update user profile
-router.put('/profile', upload, handleMulterError, async (req, res) => {
+router.put('/profile', upload, authMiddleware, handleMulterError, async (req, res) => { // Apply auth after upload
     try {
-        const { fullname, email, phoneNumber, bio, skills } = req.body;
+        const { fullname, email, phoneNumber, bio, skills, jobProfile } = req.body;
         
         // Create update object
         const updateData = {
@@ -165,7 +168,8 @@ router.put('/profile', upload, handleMulterError, async (req, res) => {
             email,
             phoneNumber,
             'profile.bio': bio,
-            'profile.skills': JSON.parse(skills)
+            'profile.skills': typeof skills === 'string' ? JSON.parse(skills) : skills,
+            ...(jobProfile ? { 'profile.jobProfile': jobProfile } : {}),
         };
 
         const resumeFile = req.files?.resume?.[0];
@@ -192,6 +196,41 @@ router.put('/profile', upload, handleMulterError, async (req, res) => {
         res.json(updatedUser);
     } catch (error) {
         console.error("Update profile error:", error);
+        cleanupFilesOnError(req.files);
+        res.status(500).json({ message: 'Server Error' });
+    }
+});
+
+// PUT - Update user profile photo
+router.post('/profile/photo', authMiddleware, upload, handleMulterError, async (req, res) => {
+    try {
+        const profilePhotoFile = req.files?.profilePhoto?.[0];
+        
+        if (!profilePhotoFile) {
+            return res.status(400).json({ message: 'No profile photo provided' });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            req.user._id,
+            { 
+                $set: { 
+                    'profile.profilePhoto': profilePhotoFile.filename 
+                } 
+            },
+            { new: true }
+        ).select('-password');
+
+        if (!updatedUser) {
+            cleanupFilesOnError(req.files);
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({ 
+            message: 'Profile photo updated successfully',
+            profilePhoto: profilePhotoFile.filename 
+        });
+    } catch (error) {
+        console.error("Update profile photo error:", error);
         cleanupFilesOnError(req.files);
         res.status(500).json({ message: 'Server Error' });
     }

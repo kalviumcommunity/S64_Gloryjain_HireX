@@ -1,46 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/auth/Navbar';
-
-// Sample jobs data with more detailed descriptions
-const sampleJobs = [
-  {
-    id: 1,
-    company: 'Google',
-    logo: 'G',
-    location: 'India',
-    position: 'FullStack Developer',
-    description: "We're looking for a Senior Full-Stack Developer who can write clean, efficient, and scalable code, and is proficient in handling both frontend and backend development seamlessly.",
-    postedDate: 'Today',
-    positions: 2,
-    type: 'Full Time',
-    salary: '45LPA'
-  },
-  {
-    id: 2,
-    company: 'Microsoft India',
-    logo: 'M',
-    location: 'India',
-    position: 'FullStack Developer',
-    description: "Seeking a Senior Full-Stack Developer skilled in building robust frontend and backend solutions, with a strong focus on writing clean, efficient, and maintainable code.",
-    postedDate: 'Today',
-    positions: 2,
-    type: 'Full Time',
-    salary: '24LPA'
-  },
-  {
-    id: 3,
-    company: 'Amazon',
-    logo: 'A',
-    location: 'India',
-    position: 'Frontend Developer',
-    description: "Looking for a Frontend Developer with strong skills in React and TypeScript to build responsive, user-focused interfaces for millions of users.",
-    postedDate: 'Today',
-    positions: 2,
-    type: 'Full Time',
-    salary: '30LPA'
-  }
-];
+import ConfirmApplyModal from '../components/ConfirmApplyModal';
 
 const JobDetails = () => {
   const { id } = useParams();
@@ -48,13 +9,20 @@ const JobDetails = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [user, setUser] = useState(null);
   const [isApplied, setIsApplied] = useState(false);
+  const [showApplyModal, setShowApplyModal] = useState(false);
   
   useEffect(() => {
     // Get job data from localStorage
-    const jobData = localStorage.getItem('selectedJobDetails');
-    if (jobData) {
-      const parsedJob = JSON.parse(jobData);
-      setSelectedJob(parsedJob);
+    const storedJobs = localStorage.getItem('jobs');
+    if (storedJobs) {
+      const parsedJobs = JSON.parse(storedJobs);
+      const job = parsedJobs.find(job => job.id === parseInt(id));
+      if (job) {
+        setSelectedJob(job);
+      } else {
+        // If job not found, redirect to browse page
+        navigate('/browse');
+      }
     }
     
     // Get user data from localStorage
@@ -89,46 +57,18 @@ const JobDetails = () => {
   };
   
   const handleApply = () => {
-    if (!user) {
-      alert('Please log in to apply for this job');
-      navigate('/login');
-      return;
-    }
-    
-    // Get existing applications from localStorage
-    const applications = JSON.parse(localStorage.getItem('applications') || '[]');
-    
-    // Check if user has already applied
-    if (isApplied) {
-      alert('You have already applied for this job');
-      return;
-    }
-    
-    // Create new application
-    const newApplication = {
-      id: applications.length + 1,
-      jobId: selectedJob.id,
-      jobTitle: selectedJob.position,
-      company: selectedJob.company,
-      studentId: user.id,
-      studentName: user.fullname || user.name,
-      studentEmail: user.email,
-      studentContact: user.phoneNumber || user.contact || 'Not provided',
-      resume: 'resume.pdf', // In a real app, this would be a link to the actual resume
-      appliedDate: new Date().toLocaleDateString(),
-      status: 'Pending'
-    };
-    
-    // Add to applications
-    applications.push(newApplication);
-    
-    // Save back to localStorage
-    localStorage.setItem('applications', JSON.stringify(applications));
-    
-    // Update application status
-    setIsApplied(true);
-    
-    alert('Application submitted successfully!');
+    setShowApplyModal(true);
+  };
+
+  const handleConfirmApply = () => {
+    setShowApplyModal(false);
+    setTimeout(() => {
+      window.open('https://docs.google.com/forms/d/e/1FAIpQLScC2ScWfKYxHV45HOsqYsOQu5fIRAlYz7sb2jRPG7Ju12ovJA/viewform?usp=header', '_blank');
+    }, 200);
+  };
+
+  const handleCloseApplyModal = () => {
+    setShowApplyModal(false);
   };
 
   const handleSaveJob = () => {
@@ -318,24 +258,46 @@ const JobDetails = () => {
         }
         
         .apply-button {
-          padding: 12px 24px;
-          background-color: #8B5CF6;
-          color: white;
-          font-size: 16px;
-          font-weight: 600;
-          border: none;
-          border-radius: 8px;
+          padding: 12px;
+          border-radius: 4px;
+          font-size: 14px;
+          font-weight: 500;
           cursor: pointer;
-          transition: background-color 0.2s;
+          transition: all 0.2s ease;
+          outline: none;
+          flex: 1;
+          text-align: center;
+          background: #8B5CF6;
+          color: white;
+          border: none;
         }
         
         .apply-button:hover {
-          background-color: #7C3AED;
+          background: #7C3AED;
         }
         
-        .apply-button:disabled {
-          background-color: #D1D5DB;
+        .apply-button.applied {
+          background-color: #9CA3AF;
           cursor: not-allowed;
+        }
+        
+        .save-button {
+          padding: 12px;
+          border-radius: 4px;
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          outline: none;
+          flex: 1;
+          text-align: center;
+          background: white;
+          color: #8B5CF6;
+          border: 1px solid #8B5CF6;
+        }
+        
+        .save-button:hover {
+          background: #f5f3ff;
         }
         
         .job-content {
@@ -431,46 +393,6 @@ const JobDetails = () => {
           display: flex;
           gap: 16px;
           margin-top: 40px;
-        }
-        
-        .apply-button {
-          padding: 14px 32px;
-          background-color: #8B5CF6;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        
-        .apply-button:hover {
-          background-color: #7C3AED;
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-        }
-        
-        .apply-button.applied {
-          background-color: #9CA3AF;
-          cursor: not-allowed;
-        }
-        
-        .save-button {
-          padding: 14px 32px;
-          background-color: white;
-          color: #374151;
-          border: 1px solid #E5E7EB;
-          border-radius: 8px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        
-        .save-button:hover {
-          background-color: #F9FAFB;
-          border-color: #D1D5DB;
         }
       `}</style>
       
@@ -583,6 +505,12 @@ const JobDetails = () => {
           </div>
         </div>
       </div>
+      <ConfirmApplyModal
+        open={showApplyModal}
+        onClose={handleCloseApplyModal}
+        onConfirm={handleConfirmApply}
+        message="Are you sure you want to apply?"
+      />
     </div>
   );
 };

@@ -3,6 +3,8 @@ import { User } from '../models/user.model.js';
 
 export const authMiddleware = async (req, res, next) => {
   try {
+    // Debug: Log the Authorization header
+    console.log('AUTH HEADER:', req.headers.authorization);
     // Get token from header
     const token = req.headers.authorization?.split(' ')[1];
     

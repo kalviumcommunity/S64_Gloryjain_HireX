@@ -1,20 +1,96 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaArrowRight, FaArrowLeft, FaSearch, FaTimes } from "react-icons/fa";
+import { FaArrowRight, FaArrowLeft, FaSearch, FaTimes, FaCheckCircle, FaTimesCircle, FaInfoCircle } from "react-icons/fa";
 import { FaFacebookF, FaTwitter, FaLinkedinIn } from "react-icons/fa";
 import Navbar from "../components/auth/Navbar";
+import ConfirmApplyModal from '../components/ConfirmApplyModal';
 
 const Home = () => {
   const navigate = useNavigate();
   const [selectedJob, setSelectedJob] = useState(null);
   const [showJobDetails, setShowJobDetails] = useState(false);
   const [user, setUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [jobs, setJobs] = useState([]);
+  const [companies, setCompanies] = useState([]);
+  const [selectedTag, setSelectedTag] = useState("");
+  const tagBarRef = useRef(null);
+  const jobCardsRef = useRef(null);
+  const [showCompanyModal, setShowCompanyModal] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applyTarget, setApplyTarget] = useState(null);
+
+  const addNotification = (message, type = 'success') => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 3000);
+  };
+
+  const jobTags = [
+    "Frontend Developer",
+    "Backend Developer",
+    "Data Engineer",
+    "FullStack Developer",
+    "Software Engineer",
+    "System Analyst",
+    "QA Engineer",
+    "DevOps Engineer",
+    "Product Manager",
+    "UI/UX Designer"
+  ];
 
   useEffect(() => {
     // Get user data from localStorage
     const userFromStorage = localStorage.getItem('user');
     if (userFromStorage) {
       setUser(JSON.parse(userFromStorage));
+    }
+    // Get companies from localStorage
+    const storedCompanies = localStorage.getItem('companies');
+    let parsedCompanies = [];
+    if (storedCompanies) {
+      parsedCompanies = JSON.parse(storedCompanies);
+      setCompanies(parsedCompanies);
+    }
+    // Get jobs from localStorage
+    const storedJobs = localStorage.getItem('jobs');
+    if (storedJobs) {
+      const parsedJobs = JSON.parse(storedJobs);
+      // Filter out incomplete jobs and format the valid ones
+      const userJobs = parsedJobs.filter(job => job.companyName && job.title);
+      
+      // Format jobs for display, attach logo from company if available
+      const formattedJobs = userJobs.map(job => {
+        let logo = (job.companyName || 'C')[0];
+        if (job.companyId && parsedCompanies.length > 0) {
+          const company = parsedCompanies.find(c => c.id === job.companyId || c.id === Number(job.companyId));
+          if (company && company.logo) {
+            logo = company.logo;
+          }
+        }
+        return {
+          id: job.id || Math.random().toString(36).substr(2, 9),
+          company: job.companyName || 'Company Name Not Available',
+          logo,
+          location: job.location || 'Location Not Available',
+          position: job.title || 'Position Not Available',
+          description: job.description || 'No description available',
+          postedDate: job.date || 'Date not available',
+          positions: job.numberOfPositions || job.positions || 1,
+          type: job.jobType || 'Not specified',
+          salary: job.salary || 'Not specified',
+          requirements: job.requirements || [],
+          experience: job.experienceLevel || job.experience || 'Not specified',
+          companyId: job.companyId
+        };
+      });
+      setJobs(formattedJobs);
+    } else {
+      setJobs([]);
     }
   }, []);
 
@@ -28,104 +104,8 @@ const Home = () => {
   };
 
   const handleApplyNow = (job) => {
-    // Check if user is logged in
-    if (!user) {
-      alert("Please log in to apply for jobs.");
-      navigate("/login");
-      return;
-    }
-
-    // Check if user is a student (only students can apply)
-    if (user.role !== 'student') {
-      alert("Only students can apply for jobs.");
-      return;
-    }
-
-    // Get all jobs from localStorage
-    const storedJobs = localStorage.getItem('jobs');
-    if (storedJobs) {
-      const jobs = JSON.parse(storedJobs);
-      const jobToUpdate = jobs.find(j => j.id === job.id);
-      
-      if (jobToUpdate) {
-        // Initialize applicants array if it doesn't exist
-        if (!jobToUpdate.applicants) {
-          jobToUpdate.applicants = [];
-        }
-        
-        // Check if the user has already applied
-        const alreadyApplied = jobToUpdate.applicants.some(
-          applicant => applicant.email === user.email
-        );
-        
-        if (alreadyApplied) {
-          alert("You have already applied for this job.");
-          return;
-        }
-        
-        // Create applicant object
-        const newApplicant = {
-          id: Date.now().toString(), // Generate unique ID
-          fullName: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-          email: user.email,
-          contact: user.phone || user.contact || "Not provided",
-          resume: "Resume_" + user.name?.replace(/\s+/g, '_') || "Resume.pdf",
-          date: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
-          status: "Pending" // Initial status is pending
-        };
-        
-        // Add applicant to the job
-        jobToUpdate.applicants.push(newApplicant);
-        
-        // Save back to localStorage
-        localStorage.setItem('jobs', JSON.stringify(jobs));
-        
-        // Show success message and close modal
-        alert(`Application submitted for ${job.title} at ${job.company}!`);
-        setShowJobDetails(false);
-      } else {
-        // If job not found in localStorage, create a new array
-        const newJobs = [
-          ...jobs,
-          {
-            ...job,
-            id: job.id || Date.now(), // Use job.id if exists, otherwise generate new ID
-            applicants: [{
-              id: Date.now().toString(),
-              fullName: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-              email: user.email,
-              contact: user.phone || user.contact || "Not provided",
-              resume: "Resume_" + user.name?.replace(/\s+/g, '_') || "Resume.pdf",
-              date: new Date().toISOString().split('T')[0],
-              status: "Pending"
-            }]
-          }
-        ];
-        
-        localStorage.setItem('jobs', JSON.stringify(newJobs));
-        alert(`Application submitted for ${job.title} at ${job.company}!`);
-        setShowJobDetails(false);
-      }
-    } else {
-      // If no jobs in localStorage yet, create first entry
-      const newJobs = [{
-        ...job,
-        id: job.id || Date.now(),
-        applicants: [{
-          id: Date.now().toString(),
-          fullName: user.name || `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-          email: user.email,
-          contact: user.phone || user.contact || "Not provided",
-          resume: "Resume_" + user.name?.replace(/\s+/g, '_') || "Resume.pdf",
-          date: new Date().toISOString().split('T')[0],
-          status: "Pending"
-        }]
-      }];
-      
-      localStorage.setItem('jobs', JSON.stringify(newJobs));
-      alert(`Application submitted for ${job.title} at ${job.company}!`);
-      setShowJobDetails(false);
-    }
+    setApplyTarget(job);
+    setShowApplyModal(true);
   };
 
   const handleSaveClick = (e, job) => {
@@ -133,7 +113,7 @@ const Home = () => {
     
     // Check if user is logged in
     if (!user) {
-      alert("Please log in to save jobs.");
+      addNotification("Please log in to save jobs.", 'info');
       navigate("/login");
       return;
     }
@@ -145,7 +125,7 @@ const Home = () => {
     const isJobAlreadySaved = savedJobs.some(savedJob => savedJob.id === job.id);
     
     if (isJobAlreadySaved) {
-      alert(`This job is already in your saved list.`);
+      addNotification(`This job is already in your saved list.`, 'info');
       return;
     }
     
@@ -156,7 +136,74 @@ const Home = () => {
     localStorage.setItem('savedJobs', JSON.stringify(savedJobs));
     
     // Show success message
-    alert(`Job saved: ${job.title || job.position} at ${job.company}!`);
+    addNotification(`Job saved: ${job.title || job.position} at ${job.company}!`, 'success');
+  };
+
+  // Filter jobs based on search term
+  const filteredJobs = jobs.filter(job => {
+    const term = searchTerm.toLowerCase();
+    return (
+      job.position.toLowerCase().includes(term) ||
+      job.company.toLowerCase().includes(term) ||
+      job.description.toLowerCase().includes(term)
+    );
+  });
+
+  const handleTagClick = (tag) => {
+    setSelectedTag(tag === selectedTag ? "" : tag);
+    setSearchTerm(tag === selectedTag ? "" : tag);
+  };
+
+  const scrollTags = (direction) => {
+    if (tagBarRef.current) {
+      const tagWidth = 200; // Match the tag minWidth/maxWidth
+      tagBarRef.current.scrollBy({
+        left: direction === "left" ? -tagWidth * 3 : tagWidth * 3,
+        behavior: "smooth"
+      });
+    }
+  };
+
+  const scrollJobCards = (direction) => {
+    if (jobCardsRef.current) {
+      const cardWidth = 340; // Approximate width of one job card + gap
+      jobCardsRef.current.scrollBy({
+        left: direction === 'left' ? -cardWidth * 3 : cardWidth * 3,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const handleCompanyDetailsClick = (company) => {
+    setSelectedCompany(company);
+    setShowCompanyModal(true);
+  };
+
+  const closeCompanyModal = () => {
+    setShowCompanyModal(false);
+    setSelectedCompany(null);
+  };
+
+  const handleCompanyApply = (company) => {
+    addNotification(`Applied to ${company.name}`, 'success');
+    setShowCompanyModal(false);
+  };
+
+  const handleConfirmApply = () => {
+    setShowApplyModal(false);
+    if (applyTarget && applyTarget.name) {
+      addNotification(`Applied to ${applyTarget.name}`, 'success');
+    }
+    setTimeout(() => {
+      window.open('https://docs.google.com/forms/d/e/1FAIpQLScC2ScWfKYxHV45HOsqYsOQu5fIRAlYz7sb2jRPG7Ju12ovJA/viewform?usp=header', '_blank');
+    }, 200);
+    setShowCompanyModal(false);
+    setApplyTarget(null);
+  };
+
+  const handleCloseApplyModal = () => {
+    setShowApplyModal(false);
+    setApplyTarget(null);
   };
 
   return (
@@ -746,174 +793,353 @@ const Home = () => {
             gap: 5px;
           }
 
-          /* Job Details Modal Styles */
+          /* New Job Details Modal Styles */
           .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.6);
+            width: 100vw;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
             display: flex;
-            justify-content: center;
             align-items: center;
-            z-index: 1000;
+            justify-content: center;
           }
 
-          .modal-container {
-            background-color: white;
-            width: 90%;
-            max-width: 800px;
-            border-radius: 12px;
-            padding: 30px;
-            max-height: 90vh;
-            overflow-y: auto;
+          .job-details-modal {
+            font-family: 'Inter', sans-serif;
+            background: #fff;
+            max-width: 700px;
+            width: 95%;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            z-index: 2100;
             position: relative;
           }
-
+          
           .modal-close {
             position: absolute;
-            top: 20px;
-            right: 20px;
+            top: 16px;
+            right: 16px;
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 22px;
+            color: #64748b;
             cursor: pointer;
-            color: #666;
+            z-index: 2;
+            transition: color 0.2s;
           }
 
           .job-details-header {
             display: flex;
-            align-items: center;
-            margin-bottom: 30px;
-          }
-
-          .job-details-title {
-            font-size: 28px;
-            font-weight: 700;
-            color: #000;
-            margin-bottom: 10px;
-          }
-
-          .job-details-company {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
+            align-items: flex-start;
+            gap: 16px;
           }
 
           .job-details-logo {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            background-color: #f8f9fa;
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            border-radius: 10px;
+          }
+          
+          .job-details-logo text {
+            fill: #475569;
+            font-weight: 600;
           }
 
-          .job-details-company-info {
+          .company-info-block .job-details-company-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e293b;
+          }
+
+          .company-info-block .job-details-company-desc {
+            font-size: 0.95rem;
+            color: #64748b;
+            margin-top: 4px;
+          }
+
+          .job-details-main {
             display: flex;
             flex-direction: column;
+            gap: 24px;
           }
 
-          .job-details-company-name {
-            font-size: 20px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-          }
-
-          .job-details-company-location {
-            font-size: 16px;
-            color: #666;
+          .job-details-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0f172a;
           }
 
           .job-details-meta {
             display: flex;
-            gap: 20px;
-            margin: 30px 0;
+            gap: 8px;
             flex-wrap: wrap;
           }
+          
+          .meta-tag {
+            border-radius: 9999px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 6px 14px;
+          }
 
-          .job-details-meta-item {
+          .meta-tag.positions-tag {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+          }
+          
+          .meta-tag.time-tag {
+            background-color: #ede9fe;
+            color: #5b21b6;
+          }
+          
+          .meta-tag.salary-tag {
+            background-color: #dcfce7;
+            color: #166534;
+          }
+
+          .job-details-body {
             display: flex;
             flex-direction: column;
+            gap: 24px;
           }
-
-          .job-details-meta-label {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
-          }
-
-          .job-details-meta-value {
-            font-size: 16px;
+          
+          .job-details-section-title {
+            font-size: 1rem;
             font-weight: 600;
-            color: #333;
+            color: #334155;
+            margin-bottom: 12px;
           }
 
-          .job-details-description {
-            margin: 20px 0;
-            line-height: 1.6;
+          .job-details-section-content, .job-details-req-list {
+            font-size: 0.95rem;
+            color: #475569;
+            line-height: 1.7;
           }
 
-          .job-details-description-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 15px;
-          }
-
-          .job-details-description-text {
-            font-size: 16px;
-            color: #444;
-          }
-
-          .job-details-requirements {
-            margin: 30px 0;
-          }
-
-          .job-details-requirements-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 15px;
-          }
-
-          .job-details-requirements-list {
+          .job-details-req-list {
             padding-left: 20px;
           }
 
-          .job-details-requirements-item {
-            margin-bottom: 10px;
-            font-size: 16px;
-            color: #444;
+          .job-details-req-list li {
+            margin-bottom: 8px;
+          }
+
+          .job-details-footer {
+            display: flex;
+            justify-content: flex-end;
+            padding-top: 16px;
+            border-top: 1px solid #f1f5f9;
           }
 
           .apply-now-btn {
-            background-color: #6e46ba;
+            background: #8B5CF6;
             color: white;
             border: none;
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: 600;
-            border-radius: 6px;
+            padding: 12px 24px;
+            font-size: 0.95rem;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 20px;
+            transition: all 0.2s ease;
           }
 
           .apply-now-btn:hover {
-            background-color: #5d3ba1;
+            background: #7C3AED;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.2), 0 4px 6px -4px rgba(124, 58, 237, 0.1);
           }
 
-          .bookmark-btn {
-            display: none; /* Hide the bookmark button */
+          /* Notification Styles */
+          .notification-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 12px;
+          }
+
+          .notification {
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            box-shadow: 0 8px 24px rgba(30, 41, 59, 0.1);
+            animation: fadeInSlideUp 0.4s ease-out forwards;
+            min-width: 320px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+          }
+
+          .notification-icon {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+          }
+
+          .notification.success .notification-icon {
+            color: #22c55e;
+          }
+
+          .notification.error .notification-icon {
+            color: #ef4444;
+          }
+
+          .notification.info .notification-icon {
+            color: #3b82f6;
+          }
+
+          @keyframes fadeInSlideUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          /* Company Details Modal Styles */
+          .company-modal-card {
+            font-family: 'Inter', Arial, sans-serif;
+            background: #fff;
+            max-width: 700px;
+            width: 95%;
+            padding: 40px 36px 32px 36px;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(15,23,42,0.12);
+            border: none;
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+            z-index: 2100;
+            position: relative;
+            margin: 0 auto;
+          }
+          .company-modal-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 8px;
+          }
+          .company-modal-logo {
+            width: 56px;
+            height: 56px;
+            min-width: 56px;
+            border-radius: 12px;
+            background: #f4f4f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .company-modal-header-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 2px;
+          }
+          .company-modal-header-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #18181b;
+            margin-bottom: 2px;
+          }
+          .company-modal-header-location {
+            font-size: 1rem;
+            color: #71717a;
+          }
+          .company-modal-body {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            margin-bottom: 0;
+          }
+          .company-modal-job-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #18181b;
+            margin-bottom: 10px;
+          }
+          .company-modal-tags {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 18px;
+          }
+          .company-modal-tag {
+            border-radius: 9999px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            padding: 6px 16px;
+            background: #f1f5f9;
+            color: #6366f1;
+          }
+          .company-modal-tag.positions-tag {
+            background: #e0f2fe;
+            color: #2563eb;
+          }
+          .company-modal-section {
+            margin-bottom: 0;
+          }
+          .company-modal-section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #18181b;
+            margin-bottom: 8px;
+          }
+          .company-modal-section-content {
+            font-size: 1rem;
+            color: #52525b;
+            line-height: 1.7;
+            margin-bottom: 0;
+          }
+          .company-modal-section-content ul, .company-modal-section-content li {
+            margin: 0;
+            padding: 0 0 0 18px;
+            list-style: disc;
+          }
+          .company-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            border-top: 1px solid #f1f5f9;
+            margin-top: 32px;
+            padding-top: 18px;
+          }
+          .apply-now-btn {
+            background: #a78bfa;
+            color: #fff;
+            border: none;
+            padding: 14px 36px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+            box-shadow: 0 2px 8px rgba(139,92,246,0.08);
+          }
+          .apply-now-btn:hover {
+            background: #8b5cf6;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(139,92,246,0.18);
           }
         `}
       </style>
 
       <div className="top-section">
-        <p className="badge">No. 1 HireX Website</p>
+        <p className="badge">No.1 Job Hunt Website</p>
         <h1>
           Search, Apply & <br /> Get Your <span className="highlight">Dream Jobs</span>
         </h1>
@@ -924,261 +1150,240 @@ const Home = () => {
 
         <div className="search-container">
           <div className="search-box">
-            <input type="text" placeholder="Find your dream jobs" />
+            <input 
+              type="text" 
+              placeholder="Find your dream jobs" 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
             <button><FaSearch size={20} /></button>
           </div>
         </div>
 
-        <div className="tags-container">
-          <button className="nav-btn"><FaArrowLeft size={18} /></button>
-          <button className="tag">Frontend Developer</button>
-          <button className="tag">Backend Developer</button>
-          <button className="tag">Data Engineer</button>
-          <button className="nav-btn"><FaArrowRight size={18} /></button>
+        <div className="tags-container" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginTop: '30px' }}>
+          <button className="nav-btn" onClick={() => scrollTags('left')}><FaArrowLeft size={18} /></button>
+          <div
+            ref={tagBarRef}
+            style={{
+              display: 'flex',
+              gap: '15px',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              width: '630px', // 3 tags * 200px + 2 gaps * 15px
+              maxWidth: '100%',
+              whiteSpace: 'nowrap',
+              scrollSnapType: 'x mandatory',
+            }}
+          >
+            {jobTags.map(tag => (
+              <button
+                key={tag}
+                className="tag"
+                style={{
+                  background: selectedTag === tag ? '#6e46ba' : 'white',
+                  color: selectedTag === tag ? 'white' : '#333',
+                  borderColor: selectedTag === tag ? '#6e46ba' : '#e0e0e0',
+                  fontWeight: selectedTag === tag ? 600 : 400,
+                  minWidth: '180px',
+                  maxWidth: '200px',
+                  flex: '0 0 200px',
+                  scrollSnapAlign: 'start',
+                }}
+                onClick={() => handleTagClick(tag)}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+          <button className="nav-btn" onClick={() => scrollTags('right')}><FaArrowRight size={18} /></button>
         </div>
       </div>
 
-      <div className="job-section">
-        <div className="section-title">
-          <h2>
-            <span className="highlight">Latest and Top</span> Job Openings
-          </h2>
-        </div>
-
-        <div className="job-cards">
-          {[
-            {
-              id: 1,
-              company: "Google",
-              location: "India",
-              title: "FullStack Developer",
-              type: "Full Time",
-              salary: "45LPA",
-              positions: 2,
-              desc: "I need senior Fullstack developer, who can able to write the efficient code, and deal with frontend and backend both",
-              role: "FullStack Developer",
-              experience: "3+ years",
-              postedDate: "2024-06-14",
-              requirements: [
-                "Strong experience with React, Node.js, and modern JavaScript",
-                "Experience with database design and management",
-                "Knowledge of frontend frameworks and backend architecture",
-                "Excellent problem-solving skills and attention to detail"
-              ]
-            },
-            {
-              id: 2,
-              company: "Microsoft India",
-              location: "India",
-              title: "Fullstack Developer",
-              type: "Full Time",
-              salary: "23LPA",
-              positions: 2,
-              desc: "I need senior Fullstack developer, who can able to write the efficient code, and deal with frontend and backend both",
-              role: "Fullstack Developer",
-              experience: "2+ years",
-              postedDate: "2024-06-13",
-              requirements: [
-                "Proficiency in JavaScript, TypeScript and C#",
-                "Experience with ASP.NET and React/Angular",
-                "Understanding of cloud services, preferably Azure",
-                "Good knowledge of database systems and optimization"
-              ]
-            },
-            {
-              id: 3,
-              company: "HireX",
-              location: "India",
-              title: "Fullstack Developer",
-              type: "Full Time",
-              salary: "34LPA",
-              positions: 4,
-              desc: "I need senior Fullstack developer, who can able to write the efficient code, and deal with frontend and backend both",
-              role: "Senior Fullstack Developer",
-              experience: "4+ years",
-              postedDate: "2024-06-12",
-              requirements: [
-                "Extensive experience with full stack development",
-                "Strong knowledge of JavaScript, React, and Node.js",
-                "Experience with microservices architecture",
-                "Ability to mentor junior developers"
-              ]
-            },
-            {
-              id: 4,
-              company: "HireX",
-              location: "India",
-              title: "Backend Developer",
-              type: "Full Time",
-              salary: "12LPA",
-              positions: 5,
-              desc: "I need backend developer who can make professional ui web pages.",
-              role: "Backend Developer",
-              experience: "1+ year",
-              postedDate: "2024-06-10",
-              requirements: [
-                "Strong knowledge of Node.js, Express or similar frameworks",
-                "Experience with database systems like MongoDB, MySQL",
-                "Understanding of RESTful APIs and microservices",
-                "Knowledge of cloud deployment and serverless architecture"
-              ]
-            },
-            {
-              id: 5,
-              company: "HireX",
-              location: "India",
-              title: "Frontend Developer",
-              type: "Full Time",
-              salary: "14LPA",
-              positions: 12,
-              desc: "I need Frontend developer who can make professional ui web pages.",
-              role: "Frontend Developer",
-              experience: "2+ years",
-              postedDate: "2024-06-08",
-              requirements: [
-                "Strong proficiency in HTML, CSS, and JavaScript",
-                "Experience with React or similar frontend frameworks",
-                "Knowledge of responsive design principles",
-                "Understanding of UI/UX best practices"
-              ]
-            }
-          ].map((job, idx) => (
-            <div className="job-card" key={idx}>
-              <div className="job-date">{idx === 0 ? 'Today' : '1 days ago'}</div>
-              <div className="company-info">
-                <div className="company-logo">
-                  {job.company === 'Google' ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
-                      <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                      <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                      <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                      <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-                    </svg>
-                  ) : job.company === 'Microsoft India' ? (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
-                      <path fill="#ff5722" d="M6 6H22V22H6z" transform="rotate(-180 14 14)"/>
-                      <path fill="#4caf50" d="M26 6H42V22H26z" transform="rotate(-180 34 14)"/>
-                      <path fill="#ffc107" d="M26 26H42V42H26z" transform="rotate(-180 34 34)"/>
-                      <path fill="#03a9f4" d="M6 26H22V42H6z" transform="rotate(-180 14 34)"/>
-                    </svg>
-                  ) : (
-                    <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <circle cx="24" cy="24" r="20" stroke="#8B5CF6" strokeWidth="2" fill="white"/>
-                      <text x="24" y="29" fontSize="16" fontWeight="bold" fill="#8B5CF6" textAnchor="middle">H</text>
-                    </svg>
-                  )}
-                </div>
-                <div className="company-details">
-                  <div className="company-name">{job.company}</div>
-                  <div className="company-location">{job.location}</div>
-                </div>
-              </div>
-              
-              <h3 className="job-title">{job.title}</h3>
-              <p className="job-desc">{job.desc}</p>
-              
-              <div className="job-meta">
-                <span className="positions">{job.positions} Positions</span>
-                <span className="job-type">{job.type}</span>
-                <span className="job-salary">{job.salary}</span>
-              </div>
-              
-              <div className="job-actions">
-                <button 
-                  className="details-btn" 
-                  onClick={() => handleDetailsClick(job)}
+      <div className="job-section" style={{ marginTop: '80px' }}>
+        {searchTerm === '' && (
+          <div className="section-title">
+            <h2>
+              <span className="highlight">Latest and Top</span> Job Openings
+            </h2>
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+          <button className="nav-btn" onClick={() => scrollJobCards('left')} style={{ zIndex: 2, marginRight: 10 }}><FaArrowLeft size={22} /></button>
+          <div
+            className="job-cards"
+            ref={jobCardsRef}
+            style={{
+              display: 'flex',
+              gap: '25px',
+              overflowX: 'auto',
+              scrollSnapType: 'x mandatory',
+              width: '1080px', // 3 cards * 340px (card+gap)
+              maxWidth: '100%',
+              padding: '20px 0',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+            }}
+          >
+            {filteredJobs.length > 0 ? (
+              filteredJobs.map((job, idx) => (
+                <div
+                  className="job-card"
+                  key={job.id}
+                  style={{
+                    minWidth: '340px',
+                    maxWidth: '340px',
+                    flex: '0 0 340px',
+                    scrollSnapAlign: 'start',
+                  }}
                 >
-                  Details
-                </button>
-                <button className="save-btn" onClick={(e) => handleSaveClick(e, job)}>Save For Later</button>
+                  <div className="job-date">{job.postedDate}</div>
+                  <div className="company-info">
+                    <div className="company-logo">
+                      {/* Show logo image or SVG if available, else fallback to initial letter */}
+                      {(() => {
+                        const logo = job.logo;
+                        if (typeof logo === 'string' && logo.startsWith('http')) {
+                          // If logo is a URL
+                          return <img src={logo} alt={job.company} style={{ width: 48, height: 48, borderRadius: '50%' }} />;
+                        } else if (logo === 'google') {
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
+                              <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                              <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                              <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                              <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                            </svg>
+                          );
+                        } else if (logo === 'microsoft') {
+                          return (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 21 21">
+                              <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                              <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                              <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                              <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                            </svg>
+                          );
+                        } else {
+                          // Fallback to initial letter
+                          return (
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="24" cy="24" r="20" stroke="#8B5CF6" strokeWidth="2" fill="white"/>
+                              <text x="24" y="29" fontSize="16" fontWeight="bold" fill="#8B5CF6" textAnchor="middle">{logo}</text>
+                            </svg>
+                          );
+                        }
+                      })()}
+                    </div>
+                    <div className="company-details">
+                      <div className="company-name">{job.company}</div>
+                      <div className="company-location">{job.location}</div>
+                    </div>
+                  </div>
+                  <h3 className="job-title">{job.position}</h3>
+                  <p className="job-desc">{job.description}</p>
+                  <div className="job-meta">
+                    <span className="positions">{job.positions} Positions</span>
+                    <span className="job-type">{job.type}</span>
+                    <span className="job-salary">{job.salary}</span>
+                  </div>
+                  <div className="job-actions">
+                    <button
+                      className="details-btn"
+                      onClick={() => handleDetailsClick(job)}
+                    >
+                      Details
+                    </button>
+                    <button className="save-btn" onClick={(e) => handleSaveClick(e, job)}>
+                      Save for Later
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div style={{
+                minWidth: '340px',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#888',
+                fontSize: '18px',
+                height: '220px',
+                textAlign: 'center',
+              }}>
+                No jobs available.
               </div>
-            </div>
-          ))}
+            )}
+          </div>
+          <button className="nav-btn" onClick={() => scrollJobCards('right')} style={{ zIndex: 2, marginLeft: 10 }}><FaArrowRight size={22} /></button>
         </div>
+        {searchTerm !== '' && (
+          <div className="section-title">
+            <h2>
+              <span className="highlight">Latest and Top</span> Job Openings
+            </h2>
+          </div>
+        )}
       </div>
 
       {/* Job Details Modal */}
       {showJobDetails && selectedJob && (
         <div className="modal-overlay" onClick={closeJobDetails}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+          <div className="job-details-modal" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={closeJobDetails}>
               <FaTimes />
             </button>
             
-            <div className="job-details-title">{selectedJob.title}</div>
-            
-            <div className="job-details-company">
+            <div className="job-details-header">
               <div className="job-details-logo">
-                {selectedJob.company === 'Google' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
-                    <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                    <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                    <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                    <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-                  </svg>
-                ) : selectedJob.company === 'Microsoft India' ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48px" height="48px">
-                    <path fill="#ff5722" d="M6 6H22V22H6z" transform="rotate(-180 14 14)"/>
-                    <path fill="#4caf50" d="M26 6H42V22H26z" transform="rotate(-180 34 14)"/>
-                    <path fill="#ffc107" d="M26 26H42V42H26z" transform="rotate(-180 34 34)"/>
-                    <path fill="#03a9f4" d="M6 26H22V42H6z" transform="rotate(-180 14 34)"/>
-                  </svg>
-                ) : (
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <circle cx="24" cy="24" r="20" stroke="#8B5CF6" strokeWidth="2" fill="white"/>
-                    <text x="24" y="29" fontSize="16" fontWeight="bold" fill="#8B5CF6" textAnchor="middle">H</text>
-                  </svg>
-                )}
+                <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="48" height="48" rx="10" fill="#f1f5f9"/>
+                  <text x="24" y="32" fontSize="20" fontWeight="bold" textAnchor="middle">{selectedJob.company[0]}</text>
+                </svg>
               </div>
-              <div className="job-details-company-info">
+              <div className="company-info-block">
                 <div className="job-details-company-name">{selectedJob.company}</div>
-                <div className="job-details-company-location">{selectedJob.location}</div>
+                <div className="job-details-company-desc">{companies.find(c => c.id === selectedJob.companyId)?.description || 'Leading innovator in the tech industry.'}</div>
+              </div>
+            </div>
+
+            <div className='job-details-main'>
+              <h1 className="job-details-title">{selectedJob.position}</h1>
+
+              <div className="job-details-meta">
+                <span className="meta-tag positions-tag">{selectedJob.positions} Positions</span>
+                <span className="meta-tag time-tag">{selectedJob.type}</span>
+                {selectedJob.salary && <span className="meta-tag salary-tag">{selectedJob.salary}</span>}
+              </div>
+
+              <div className="job-details-body">
+                <div className="job-details-section">
+                  <h2 className="job-details-section-title">Job Description</h2>
+                  <p className="job-details-section-content">{selectedJob.description}</p>
+                </div>
+
+                <div className="job-details-section">
+                  <h2 className="job-details-section-title">Requirements</h2>
+                  <ul className="job-details-req-list">
+                    {Array.isArray(selectedJob.requirements) && selectedJob.requirements.map((req, index) => (
+                      <li key={index}>{req}</li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="job-details-section">
+                  <h2 className="job-details-section-title">Experience</h2>
+                  <p className="job-details-section-content">{selectedJob.experience || 'Not specified'}</p>
+                </div>
               </div>
             </div>
             
-            <div className="job-details-meta">
-              <div className="job-details-meta-item">
-                <span className="job-details-meta-label">Job Type</span>
-                <span className="job-details-meta-value">{selectedJob.type}</span>
-              </div>
-              <div className="job-details-meta-item">
-                <span className="job-details-meta-label">Salary</span>
-                <span className="job-details-meta-value">{selectedJob.salary}</span>
-              </div>
-              <div className="job-details-meta-item">
-                <span className="job-details-meta-label">Experience</span>
-                <span className="job-details-meta-value">{selectedJob.experience}</span>
-              </div>
-              <div className="job-details-meta-item">
-                <span className="job-details-meta-label">Posted</span>
-                <span className="job-details-meta-value">{selectedJob.postedDate}</span>
-              </div>
-              <div className="job-details-meta-item">
-                <span className="job-details-meta-label">Positions</span>
-                <span className="job-details-meta-value">{selectedJob.positions}</span>
-              </div>
+            <div className="job-details-footer">
+              <button className="apply-now-btn" onClick={() => handleApplyNow(selectedJob)}>
+                Apply Now
+              </button>
             </div>
-            
-            <div className="job-details-description">
-              <h3 className="job-details-description-title">Job Description</h3>
-              <p className="job-details-description-text">{selectedJob.desc}</p>
-            </div>
-            
-            <div className="job-details-requirements">
-              <h3 className="job-details-requirements-title">Requirements</h3>
-              <ul className="job-details-requirements-list">
-                {selectedJob.requirements.map((req, index) => (
-                  <li key={index} className="job-details-requirements-item">{req}</li>
-                ))}
-              </ul>
-            </div>
-            
-            <button 
-              className="apply-now-btn" 
-              onClick={() => handleApplyNow(selectedJob)}
-            >
-              Apply Now
-            </button>
           </div>
         </div>
       )}
@@ -1195,10 +1400,15 @@ const Home = () => {
             <div className="news-card">
               <div className="news-image" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1573164713988-8665fc963095?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80")' }}></div>
               <div className="news-content">
-                <span className="news-date">June 12, 2024</span>
-                <h3 className="news-title">Tech Industry Sees Surge in Remote Work Opportunities</h3>
-                <p className="news-excerpt">The technology sector continues to lead the way in flexible work arrangements as more companies embrace remote-first policies...</p>
-                <a href="#" className="read-more">
+                <span className="news-date">April 05, 2023</span>
+                <h3 className="news-title">Who's Thriving in Remote Work</h3>
+                <p className="news-excerpt">New research shows that remote work isn't a one-size-fits-all solution. Discover who benefits most and how to make it work for your team.</p>
+                <a 
+                  href="https://hbr.org/2023/04/the-surprising-truth-about-whos-thriving-in-remote-work" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="read-more"
+                >
                   Read more <FaArrowRight size={12} />
                 </a>
               </div>
@@ -1207,10 +1417,15 @@ const Home = () => {
             <div className="news-card">
               <div className="news-image" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80")' }}></div>
               <div className="news-content">
-                <span className="news-date">June 8, 2024</span>
-                <h3 className="news-title">AI Skills Now Top Requirement for Data Science Roles</h3>
-                <p className="news-excerpt">As artificial intelligence continues to transform industries, employers are increasingly seeking candidates with specialized AI skills...</p>
-                <a href="#" className="read-more">
+                <span className="news-date">January 20, 2024</span>
+                <h3 className="news-title">What Are AI Skills and How to Get Them</h3>
+                <p className="news-excerpt">Artificial intelligence is changing the job market. Learn about the most in-demand AI skills and how you can start building them today.</p>
+                <a 
+                  href="https://www.coursera.org/articles/ai-skills" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="read-more"
+                >
                   Read more <FaArrowRight size={12} />
                 </a>
               </div>
@@ -1219,10 +1434,15 @@ const Home = () => {
             <div className="news-card">
               <div className="news-image" style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1579389083078-4e7018379f7e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80")' }}></div>
               <div className="news-content">
-                <span className="news-date">June 5, 2024</span>
-                <h3 className="news-title">Study Shows Soft Skills Increasingly Valued by Employers</h3>
-                <p className="news-excerpt">A recent survey of hiring managers reveals that communication, adaptability, and problem-solving skills are becoming as important as technical qualifications...</p>
-                <a href="#" className="read-more">
+                <span className="news-date">February 15, 2024</span>
+                <h3 className="news-title">Top 10 Soft Skills for the Workplace</h3>
+                <p className="news-excerpt">Beyond technical abilities, employers are looking for crucial soft skills. See the top 10 skills that can help you succeed in any role.</p>
+                <a 
+                  href="https://www.indeed.com/career-advice/resumes-cover-letters/soft-skills" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="read-more"
+                >
                   Read more <FaArrowRight size={12} />
                 </a>
               </div>
@@ -1237,63 +1457,58 @@ const Home = () => {
           <div className="companies-header">
             <h2>Featured <span className="highlight">Companies</span></h2>
           </div>
-          
           <div className="companies-grid">
-            <div className="company-card">
-              <div className="company-logo-large">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="80px" height="80px">
-                  <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
-                  <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
-                  <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
-                  <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
-                </svg>
+            {companies.length > 0 ? (
+              companies.map(company => (
+                <div className="company-card" key={company.id}>
+                  <div className="company-logo-large">
+                    {/* Render logo as before */}
+                    {(() => {
+                      if (company.logo === 'google') {
+                        return (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="80px" height="80px">
+                            <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                            <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                            <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                            <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                          </svg>
+                        );
+                      } else if (company.logo === 'microsoft') {
+                        return (
+                          <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 21 21">
+                            <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                            <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                            <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                            <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                          </svg>
+                        );
+                      } else if (typeof company.logo === 'string' && company.logo.startsWith('http')) {
+                        return <img src={company.logo} alt={company.name} style={{ width: 80, height: 80, borderRadius: '50%' }} />;
+                      } else {
+                        return (
+                          <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="40" cy="40" r="33" stroke="#8B5CF6" strokeWidth="3" fill="white"/>
+                            <text x="40" y="48" fontSize="24" fontWeight="bold" fill="#8B5CF6" textAnchor="middle">{company.name.charAt(0)}</text>
+                          </svg>
+                        );
+                      }
+                    })()}
+                  </div>
+                  <h3 className="company-title">{company.name}</h3>
+                  <p className="company-industry">{company.industry || 'Industry'}</p>
+                  <span className="open-positions">{company.openPositions || 'N/A'} Open Positions</span>
+                  <button className="action-button details-button" style={{ marginTop: 16 }} onClick={() => handleCompanyDetailsClick(company)}>Details</button>
+                </div>
+              ))
+            ) : (
+              <div style={{ textAlign: 'center', color: '#888', padding: '40px 0', fontSize: '18px', width: '100%' }}>
+                No companies available.
               </div>
-              <h3 className="company-title">Google</h3>
-              <p className="company-industry">Technology</p>
-              <span className="open-positions">24 Open Positions</span>
-            </div>
-            
-            <div className="company-card">
-              <div className="company-logo-large">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="80px" height="80px">
-                  <path fill="#ff5722" d="M6 6H22V22H6z" transform="rotate(-180 14 14)"/>
-                  <path fill="#4caf50" d="M26 6H42V22H26z" transform="rotate(-180 34 14)"/>
-                  <path fill="#ffc107" d="M26 26H42V42H26z" transform="rotate(-180 34 34)"/>
-                  <path fill="#03a9f4" d="M6 26H22V42H6z" transform="rotate(-180 14 34)"/>
-                </svg>
-              </div>
-              <h3 className="company-title">Microsoft</h3>
-              <p className="company-industry">Technology</p>
-              <span className="open-positions">18 Open Positions</span>
-            </div>
-            
-            <div className="company-card">
-              <div className="company-logo-large">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M40 70C56.5685 70 70 56.5685 70 40C70 23.4315 56.5685 10 40 10C23.4315 10 10 23.4315 10 40C10 56.5685 23.4315 70 40 70Z" fill="#FF9900"/>
-                  <path d="M34.3353 36.3917C34.3353 37.1917 34.4236 37.8417 34.5883 38.325C34.7648 38.8083 35.003 39.2917 35.3177 39.7583C35.4236 39.9083 35.4648 40.0583 35.4648 40.1917C35.4648 40.3583 35.3648 40.525 35.1648 40.6917L33.403 41.8583C33.2442 41.9667 33.0854 42.0167 32.9383 42.0167C32.7677 42.0167 32.6089 41.9417 32.4501 41.7917C32.1354 41.4333 31.8442 41.0583 31.5766 40.675C31.3177 40.2917 31.0766 39.8583 30.8442 39.375C29.053 41.5833 26.7736 42.6833 24.003 42.6833C21.9589 42.6833 20.3236 42.0583 19.0971 40.8167C17.8707 39.575 17.2619 37.9333 17.2619 35.9C17.2619 33.7667 17.9883 31.9917 19.453 30.5833C20.9177 29.175 22.8177 28.4667 25.1619 28.4667C25.9883 28.4667 26.8265 28.55 27.6883 28.7C28.5501 28.85 29.453 29.075 30.4029 29.3417V27.3083C30.4029 25.6583 30.0178 24.4917 29.2619 23.8167C28.4942 23.1417 27.2442 22.8083 25.5119 22.8083C24.7118 22.8083 23.8854 22.9 23.0471 23.0917C22.2089 23.2833 21.403 23.525 20.6237 23.825C20.2619 23.9667 19.9707 24.05 19.7766 24.0833C19.5942 24.1167 19.453 24.1333 19.3471 24.1333C19.003 24.1333 18.8324 23.8667 18.8324 23.325V22.1417C18.8324 21.725 18.8736 21.4167 18.9677 21.2417C19.0619 21.0583 19.2324 20.875 19.4913 20.7C20.2707 20.325 21.2177 20.0083 22.3236 19.75C23.4295 19.4833 24.6029 19.35 25.8412 19.35C28.6236 19.35 30.6883 20.0167 32.0353 21.3583C33.3706 22.6917 34.0412 24.6917 34.0412 27.3583V36.3917H34.3353ZM25.2795 39.3417C26.0707 39.3417 26.903 39.1917 27.7766 38.8833C28.6501 38.575 29.4177 38.0583 30.0589 37.3583C30.4236 36.9417 30.6883 36.475 30.8471 35.9417C31.003 35.4083 31.0942 34.7917 31.0942 34.075V32.2167C30.403 32.0167 29.6619 31.85 28.8825 31.725C28.103 31.6 27.3354 31.5417 26.5648 31.5417C25.1148 31.5417 24.0059 31.85 23.2383 32.4833C22.4707 33.1167 22.0912 34.025 22.0912 35.2167C22.0912 36.3417 22.3765 37.1917 22.9471 37.775C23.5059 38.375 24.2971 38.6667 25.2795 39.3417ZM44.7175 41.8917C44.2704 41.8917 43.9734 41.8083 43.7733 41.6333C43.5733 41.4667 43.3969 41.1 43.2498 40.6L38.2852 22.5C38.138 21.9833 38.0675 21.6417 38.0675 21.4333C38.0675 20.975 38.2557 20.7417 38.6439 20.7417H40.7939C41.2527 20.7417 41.5733 20.825 41.7498 21C41.9351 21.1667 42.0704 21.525 42.2174 22.025L46.0439 37.7083L49.6204 22.025C49.7439 21.5083 49.8792 21.1583 50.0645 21C50.2498 20.8417 50.5821 20.7417 51.0281 20.7417H52.7263C53.1851 20.7417 53.5056 20.8417 53.6939 21C53.8851 21.1583 54.0292 21.5167 54.1409 22.025L57.7645 37.9583L61.6734 22.025C61.8204 21.5083 61.9557 21.1583 62.1292 21C62.3145 20.8417 62.6263 20.7417 63.0851 20.7417H65.118C65.5062 20.7417 65.7027 20.9667 65.7027 21.4333C65.7027 21.5583 65.6851 21.6917 65.6439 21.8417C65.6027 21.9917 65.5498 22.175 65.4675 22.4L60.4086 40.6083C60.2615 41.1167 60.0851 41.4833 59.885 41.65C59.685 41.8167 59.3821 41.9 58.9674 41.9H57.1733C56.7146 41.9 56.394 41.8083 56.2057 41.6333C56.0174 41.4583 55.8733 41.1 55.7616 40.5833L52.1851 25.2333L48.6204 40.575C48.5086 41.0917 48.3645 41.45 48.1762 41.625C47.9879 41.8 47.6556 41.8917 47.1968 41.8917H44.7175Z" fill="white"/>
-                </svg>
-              </div>
-              <h3 className="company-title">Amazon</h3>
-              <p className="company-industry">E-commerce, Cloud</p>
-              <span className="open-positions">42 Open Positions</span>
-            </div>
-            
-            <div className="company-card">
-              <div className="company-logo-large">
-                <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="40" cy="40" r="33" stroke="#8B5CF6" strokeWidth="3" fill="white"/>
-                  <text x="40" y="48" fontSize="24" fontWeight="bold" fill="#8B5CF6" textAnchor="middle">H</text>
-                </svg>
-              </div>
-              <h3 className="company-title">HireX</h3>
-              <p className="company-industry">Recruitment</p>
-              <span className="open-positions">15 Open Positions</span>
-            </div>
+            )}
           </div>
         </div>
       </section>
-      
+
       {/* Career Resources Section */}
       <section className="resources-section">
         <div className="resources-container">
@@ -1306,27 +1521,27 @@ const Home = () => {
               <div className="resource-icon">📝</div>
               <h3 className="resource-title">Resume Building Guide</h3>
               <p className="resource-description">Learn how to create a standout resume that catches employers' attention and showcases your skills effectively.</p>
-              <a href="#" className="resource-link">
+              <Link to="/career-resource/resume-building" className="resource-link">
                 Learn more <FaArrowRight size={12} />
-              </a>
+              </Link>
             </div>
             
             <div className="resource-card">
               <div className="resource-icon">🎯</div>
               <h3 className="resource-title">Interview Preparation</h3>
               <p className="resource-description">Comprehensive guides and tips to help you ace your job interviews, from research to follow-up.</p>
-              <a href="#" className="resource-link">
+              <Link to="/career-resource/interview-preparation" className="resource-link">
                 Learn more <FaArrowRight size={12} />
-              </a>
+              </Link>
             </div>
             
             <div className="resource-card">
               <div className="resource-icon">💼</div>
               <h3 className="resource-title">Salary Negotiation</h3>
               <p className="resource-description">Expert advice on how to negotiate your salary and benefits package to maximize your compensation.</p>
-              <a href="#" className="resource-link">
+              <Link to="/career-resource/salary-negotiation" className="resource-link">
                 Learn more <FaArrowRight size={12} />
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -1348,6 +1563,121 @@ const Home = () => {
           </a>
         </div>
       </footer>
+
+      {/* Notifications */}
+      <div className="notification-container">
+        {notifications.map((n) => (
+          <div key={n.id} className={`notification ${n.type}`}>
+            <div className="notification-icon">
+              {n.type === 'success' && <FaCheckCircle />}
+              {n.type === 'error' && <FaTimesCircle />}
+              {n.type === 'info' && <FaInfoCircle />}
+            </div>
+            <span>{n.message}</span>
+          </div>
+        ))}
+      </div>
+
+      <ConfirmApplyModal
+        open={showApplyModal}
+        onClose={handleCloseApplyModal}
+        onConfirm={handleConfirmApply}
+        message="Are you sure you want to apply?"
+      />
+
+      {/* Company Details Modal */}
+      {showCompanyModal && selectedCompany && (
+        <div className="modal-overlay" onClick={closeCompanyModal}>
+          <div className="company-modal-card" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={closeCompanyModal} style={{ alignSelf: 'flex-end' }}>
+              <FaTimes />
+            </button>
+            <div className="company-modal-header">
+              <div className="company-modal-logo">
+                {(() => {
+                  if (selectedCompany.logo === 'google') {
+                    return (
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="56px" height="56px">
+                        <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/>
+                        <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/>
+                        <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
+                        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
+                      </svg>
+                    );
+                  } else if (selectedCompany.logo === 'microsoft') {
+                    return (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 21 21">
+                        <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
+                        <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
+                        <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
+                        <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+                      </svg>
+                    );
+                  } else if (typeof selectedCompany.logo === 'string' && selectedCompany.logo.startsWith('http')) {
+                    return <img src={selectedCompany.logo} alt={selectedCompany.name} style={{ width: 56, height: 56, borderRadius: '12px', background: '#f3f4f6' }} />;
+                  } else {
+                    return (
+                      <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="56" height="56" rx="12" fill="#f3f4f6"/>
+                        <text x="28" y="36" fontSize="24" fontWeight="bold" fill="#8B5CF6" textAnchor="middle">{selectedCompany.name?.charAt(0)}</text>
+                      </svg>
+                    );
+                  }
+                })()}
+              </div>
+              <div className="company-modal-header-info">
+                <div className="company-modal-header-title">{selectedCompany.name}</div>
+                <div className="company-modal-header-location">{selectedCompany.location}</div>
+              </div>
+            </div>
+            <div className="company-modal-body">
+              <div className="company-modal-job-title">{selectedCompany.industry || 'Industry'}</div>
+              <div className="company-modal-tags">
+                <span className="company-modal-tag positions-tag">{selectedCompany.openPositions || 0} Positions</span>
+                {selectedCompany.type && <span className="company-modal-tag type-tag">{selectedCompany.type}</span>}
+                {selectedCompany.date && <span className="company-modal-tag date-tag">{selectedCompany.date}</span>}
+              </div>
+              <div className="company-modal-section">
+                <div className="company-modal-section-title">Description</div>
+                <div className="company-modal-section-content">{selectedCompany.description || 'No description available.'}</div>
+              </div>
+              {selectedCompany.requirements && selectedCompany.requirements.length > 0 && (
+                <div className="company-modal-section">
+                  <div className="company-modal-section-title">Requirements</div>
+                  <ul className="company-modal-section-content">
+                    {selectedCompany.requirements.map((req, idx) => (
+                      <li key={idx}>{req}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="company-modal-section">
+                <div className="company-modal-section-title">Experience</div>
+                <div className="company-modal-section-content">{selectedCompany.experience || 'Not specified'}</div>
+              </div>
+              <div className="company-modal-section company-modal-section-meta">
+                {selectedCompany.website && <div><b>Website:</b> <a href={selectedCompany.website} target="_blank" rel="noopener noreferrer">{selectedCompany.website}</a></div>}
+                {selectedCompany.email && <div><b>Email:</b> {selectedCompany.email}</div>}
+                {selectedCompany.address && <div><b>Address:</b> {selectedCompany.address}</div>}
+                {selectedCompany.phone && <div><b>Phone:</b> {selectedCompany.phone}</div>}
+              </div>
+            </div>
+            <div className="company-modal-footer">
+              <button className="apply-now-btn" onClick={() => { setApplyTarget(selectedCompany); setShowApplyModal(true); }}>
+                Apply Now
+              </button>
+            </div>
+            {showApplyModal && showCompanyModal && (
+              <ConfirmApplyModal
+                open={showApplyModal}
+                onClose={handleCloseApplyModal}
+                onConfirm={handleConfirmApply}
+                message="Are you sure you want to apply?"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

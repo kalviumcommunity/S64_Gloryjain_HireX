@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { FaUsers } from 'react-icons/fa';
+import { FaUsers, FaCheckCircle, FaTimesCircle, FaInfoCircle } from 'react-icons/fa';
 import Navbar from '../components/auth/Navbar';
 
 const Jobs = () => {
@@ -10,8 +10,16 @@ const Jobs = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-  const [notification, setNotification] = useState(null);
   const [user, setUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+
+  const addNotification = (message, type = 'success') => {
+    const id = Date.now();
+    setNotifications(prev => [...prev, { id, message, type }]);
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    }, 3000);
+  };
 
   // Check if user is logged in and is a recruiter
   useEffect(() => {
@@ -32,35 +40,30 @@ const Jobs = () => {
 
   // Load jobs from localStorage that belong to the recruiter
   useEffect(() => {
-    if (user && user.role === 'recruiter') {
+    if (user && user.role === 'recruiter' && (user.id || user.email)) {
       const storedJobs = localStorage.getItem('jobs');
       const allJobs = storedJobs ? JSON.parse(storedJobs) : [];
-      
-      // Either filter jobs by recruiter ID or show all if no specific filtering mechanism
-      // Here we'll assume all jobs in localStorage belong to the current recruiter
-      // In a real app, you'd filter by user.id or similar
-      setJobs(allJobs);
-      
-      // If no jobs yet, initialize with empty array instead of sample data
+      let recruiterJobs = [];
+      if (user.id) {
+        recruiterJobs = allJobs.filter(job => job.recruiterId === user.id);
+      } else if (user.email) {
+        recruiterJobs = allJobs.filter(job => job.recruiterEmail === user.email);
+      }
+      setJobs(recruiterJobs);
       if (!storedJobs) {
         localStorage.setItem('jobs', JSON.stringify([]));
       }
     }
   }, [user]);
 
-  // Check for notification message from location state
+  // Check for notification message from location state and show it
   useEffect(() => {
     if (location.state?.notification) {
-      setNotification(location.state.notification);
-      
-      // Clear notification after 3 seconds
-      const timer = setTimeout(() => {
-        setNotification(null);
-      }, 3000);
-      
-      return () => clearTimeout(timer);
+      addNotification(location.state.notification, 'success');
+      // Clean the state to avoid re-showing notification on refresh
+      navigate(location.pathname, { replace: true, state: {} });
     }
-  }, [location.state]);
+  }, [location.state, navigate]);
 
   // Handle search input change
   const handleSearchChange = (e) => {
@@ -70,7 +73,7 @@ const Jobs = () => {
   // Filter jobs based on search term
   const filteredJobs = jobs.filter(job => 
     job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.role.toLowerCase().includes(searchTerm.toLowerCase())
+    job.jobType.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Toggle dropdown menu
@@ -126,8 +129,8 @@ const Jobs = () => {
   const handleEditJob = (e, job) => {
     e.stopPropagation();
     setActiveDropdown(null);
-    // Navigate to job edit page (to be implemented)
-    navigate('/edit-job', { state: { jobData: job } });
+    // Navigate to job edit page (reusing NewJob page in edit mode)
+    navigate('/new-job', { state: { editMode: true, jobData: job } });
   };
 
   // Handle delete job
@@ -143,8 +146,7 @@ const Jobs = () => {
     localStorage.setItem('jobs', JSON.stringify(updatedJobs));
     
     // Show notification
-    setNotification('Job deleted successfully');
-    setTimeout(() => setNotification(null), 3000);
+    addNotification('Job deleted successfully', 'success');
   };
 
   // Handle view job details
@@ -162,7 +164,10 @@ const Jobs = () => {
 
   // If user is not a recruiter or not logged in, don't render the page
   if (!user || user.role !== 'recruiter') {
-    return null;
+    return <div>Loading...</div>;
+  }
+  if (!user.id && !user.email) {
+    return <div>Unable to identify recruiter. Please log out and log in again, or contact support.</div>;
   }
 
   return (
@@ -189,7 +194,7 @@ const Jobs = () => {
         <div className="jobs-table">
           <div className="table-header">
             <div className="company-column">Company Name</div>
-            <div className="role-column">Role</div>
+            <div className="role-column">Job Type</div>
             <div className="date-column">Date</div>
             <div className="action-column">Action</div>
           </div>
@@ -203,7 +208,7 @@ const Jobs = () => {
                   onClick={() => handleViewJobDetails(job)}
                 >
                   <div className="company-column">{job.companyName}</div>
-                  <div className="role-column">{job.role}</div>
+                  <div className="role-column">{job.jobType}</div>
                   <div className="date-column">{job.date}</div>
                   <div className="action-column">
                     <div className="dropdown-container">
@@ -246,7 +251,7 @@ const Jobs = () => {
                             className="dropdown-item"
                             onClick={(e) => handleViewApplicants(e, job.id)}
                           >
-                            <FaUsers className="applicants-icon" />
+                            <FaUsers style={{ marginRight: '8px' }} />
                             Applicants
                           </button>
                         </div>
@@ -256,7 +261,9 @@ const Jobs = () => {
                 </div>
               ))
             ) : (
-              <div className="no-results">No jobs found</div>
+              <div className="table-row no-jobs">
+                You haven't posted any jobs yet.
+              </div>
             )}
           </div>
         </div>
@@ -264,18 +271,22 @@ const Jobs = () => {
         <div className="jobs-footer">
           <p>A list of your recent posted jobs</p>
         </div>
-        
-        {notification && (
-          <div className="notification-toast">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-            <span>{notification}</span>
-          </div>
-        )}
       </div>
       
+      {/* Notifications */}
+      <div className="notification-container">
+        {notifications.map((n) => (
+          <div key={n.id} className={`notification ${n.type}`}>
+            <div className="notification-icon">
+              {n.type === 'success' && <FaCheckCircle />}
+              {n.type === 'error' && <FaTimesCircle />}
+              {n.type === 'info' && <FaInfoCircle />}
+            </div>
+            <span>{n.message}</span>
+          </div>
+        ))}
+      </div>
+
       <style jsx="true">{`
         .jobs-page {
           min-height: 100vh;
@@ -460,10 +471,11 @@ const Jobs = () => {
           color: #ef4444;
         }
         
-        .no-results {
-          padding: 20px;
+        .no-jobs {
           text-align: center;
+          padding: 40px;
           color: #6b7280;
+          font-size: 1.1rem;
         }
         
         .jobs-footer {
@@ -473,30 +485,57 @@ const Jobs = () => {
           font-size: 14px;
         }
         
-        .notification-toast {
+        /* Notification Styles */
+        .notification-container {
           position: fixed;
-          bottom: 20px;
-          right: 20px;
+          bottom: 24px;
+          right: 24px;
+          z-index: 10000;
+          display: flex;
+          flex-direction: column-reverse;
+          gap: 12px;
+        }
+
+        .notification {
+          background: #f1f5f9;
+          color: #1e293b;
+          padding: 16px 24px;
+          border-radius: 8px;
+          font-weight: 500;
+          box-shadow: 0 8px 24px rgba(30, 41, 59, 0.1);
+          animation: fadeInSlideUp 0.4s ease-out forwards;
+          min-width: 320px;
           display: flex;
           align-items: center;
-          gap: 10px;
-          background: #10B981;
-          color: white;
-          border-radius: 6px;
-          padding: 12px 16px;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-          z-index: 1000;
-          animation: slideIn 0.3s ease-out;
+          gap: 12px;
         }
-        
-        @keyframes slideIn {
+
+        .notification-icon {
+          font-size: 1.2rem;
+          display: flex;
+          align-items: center;
+        }
+
+        .notification.success .notification-icon {
+          color: #22c55e;
+        }
+
+        .notification.error .notification-icon {
+          color: #ef4444;
+        }
+
+        .notification.info .notification-icon {
+          color: #3b82f6;
+        }
+
+        @keyframes fadeInSlideUp {
           from {
-            transform: translateY(20px);
             opacity: 0;
+            transform: translateY(20px);
           }
           to {
-            transform: translateY(0);
             opacity: 1;
+            transform: translateY(0);
           }
         }
       `}</style>
