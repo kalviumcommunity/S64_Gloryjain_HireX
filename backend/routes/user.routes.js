@@ -22,15 +22,19 @@ router.get('/', async (req, res) => {
 // POST - User Login
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Email and password are required' });
+        if (!email || !password || !role) {
+            return res.status(400).json({ message: 'Email, password and role are required' });
         }
 
         const user = await User.findOne({ email: email.toLowerCase().trim() });
         if (!user) {
             return res.status(400).json({ message: 'Invalid email or password' });
+        }
+
+        if (user.role !== role) {
+            return res.status(400).json({ message: "Account doesn't exist with current role" });
         }
 
         const isMatch = await user.comparePassword(password);
