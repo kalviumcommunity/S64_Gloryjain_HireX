@@ -26,7 +26,11 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: [
+    'http://localhost:5173', 
+    'http://localhost:5174', 
+    'https://hirex-gloryjain-frontend-1.netlify.app'
+  ],
   credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
